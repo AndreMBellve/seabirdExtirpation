@@ -1,0 +1,431 @@
+to recruit
+  
+  set new-recruits turtles with [ life-stage = "Juvenile" and age = 0]
+  
+  ask n-of (random-binomial count(new-recruits) juvenile-mortality) new-recruits
+  [
+    die
+  ]
+  
+  ask turtles
+  [
+    set age (age + 1)
+  ]
+  
+  ask turtles with [ life-stage = "Juvenile" ]
+  [
+    if age >= age-at-first-breeding ;add some variability to this???
+    [
+      set life-stage "Adult"
+    ]
+  ]
+  
+  set breeders turtles with [ life-stage = "Adult" ]
+end
+
+to philopatry-check
+  ask males with [ settled? = false and life-stage = "Adult" ]
+  [
+    choose-colony male-philopatry
+  ]
+  
+  ask females with [ settled? = false and life-stage = "Adult" ]
+  [
+    choose-colony female-philopatry
+  ]
+  
+end
+
+
+to choose-colony [ philopatry ]
+  
+  ifelse (random-float 1 < philopatry)
+  [
+    set breeding-grounds patch-set patches with [ colony-id = [ natal-ground-id ] of myself]
+    set settled? true
+    set breeding-ground-id natal-ground-id
+  ]
+  [
+    set breeding-grounds patch-set patches with [ colony-id > 0 and colony-id != [ natal-ground-id ] of myself] ;randomly selecting a new breeding ground from the remaining others
+    set settled? true
+    set breeding-ground-id one-of [ colony-id ] of breeding-grounds 
+  ]
+  
+end
+
+
+to find-burrow ;a task solely for males  
+  let potential-breeders males with [ not breeding? and life-stage = "Adult" ] ;potential-breeders returning
+  let returning-breeders n-of (random-binomial count(potential-breeders) prop-returning-breeders) potential-breeders ;actual returning individuals
+ 
+  if any? returning-breeders ;defensive to make sure that some birds exist.
+  [
+    ask returning-breeders
+    [
+      if debug? [ show "male moving" ]
+      
+      ifelse burrow != no-patches ;moving to burrow if one available
+      [
+        if debug? [ show burrow ]
+        
+        move-to burrow ;moving to current burrow
+        
+        ;moving in?
+        ifelse [ occupancy ] of burrow < [ occupancy-limit ] of burrow ;checking there is room still
+        [
+          ;yes? then stay here
+          set occupancy occupancy + 1
+          set breeding? true
+        ]
+        ;if their current burrow is occupied...
+        [ 
+          set burrow no-patches ;removing current burrow        
+          ifelse count( neighbourhood with [ occupancy < occupancy-limit ] ) > 0 ;checking if they have alternatives in the neighbourhood
+          [
+            prospect
+          ]
+          [
+            setxy 0 0 ;They quit if there are no burrows free... possibly amend this?
+          ]
+        ]  
+      ]
+      
+      
+      [ ;else statement for birds with no burrow
+        let free-burrows count( breeding-grounds with [ occupancy < occupancy-limit ] )
+        if free-burrows > 0 
+        [ ;else statement if the bird does not have a burrow.
+          prospect   
+        ]
+      ]
+    ]
+  ]
+end
+
+to prospect
+  
+  let tries 1
+  
+  while [ tries < max-tries ]
+  [
+    move-to one-of neighbourhood with [ occupancy < occupancy-limit ]
+    ifelse random-float 1 < habitat-attrac
+    [
+      set occupancy (occupancy + 1)
+      set habitat-attrac (patch-occ * 0.3) + (hab-quality * 0.3) + (local-occ * 0.3) ;updating attractiveness
+      set breeding? true
+      set tries (tries + max-tries) ; ending
+      set burrow patch-here
+    ]
+    [
+      set tries (tries + 1) ;updating the number of attempts
+      if tries >= max-tries
+      [
+        setxy 0 0
+      ]
+    ]
+  ] ;;put in an alternative for if the tries = 1 or greater
+  
+end
+
+to find-mate ;a task solely for females
+  
+  let adult-females females with [ life-stage = "Adult" ]
+  
+  ask adult-females with [ not breeding? and mating-id >= 0] ;females who have a mate already
+  [
+      if debug? [ show "Mated female moving" ]
+    
+    move-to mate ;move straight to their mate
+    
+    if [ breeding? ] of mate
+    [
+      set                                                                                                                                                                                                                                                               breeding? true
+      set mating? true
+      ask mate
+      [
+        set mating? true
+      ]
+    ]
+  ]
+  
+  
+  ask adult-females with [ not breeding? and mate = nobody ] ;females who need to find a mate
+  [
+    if debug? [ show "Unmated female moving" ]
+    let f-breeding-ground [ breeding-ground-id ] of self
+    let free-males males with [ mating-id = -1 and breeding? and breeding-ground-id = f-breeding-ground ] 
+    
+    if count free-males > 0 ;checking there are potential males
+    [
+      let tries 1
+      while [ tries < max-tries and count ( free-males ) > 0 ]
+      [
+        move-to one-of breeding-grounds with [ count (males-here with [ mating-id = -1 ]) > 0 ] ;move to potential breeding ground
+       
+        if debug? [ show count (free-males) ]
+       
+        ifelse random-float 1 < habitat-attrac ;check if they want to move in
+        [
+          let f-mate self
+          let m-mate one-of (males-on patch-here) with [mating-id = -1]
+          
+          ask m-mate
+          [
+            set mate f-mate
+            set mating-id [ who ] of f-mate
+            set mating? true
+          ]        
+          set breeding? true
+          set mating? true
+          set mate m-mate
+          set mating-id [mating-id] of m-mate
+          set tries (tries + max-tries)
+        ]
+        [
+          set tries (tries + 1) ;updating the number of attempts if they didn't like that spot
+        ]
+      ] 
+    ]
+  ]
+end
+
+to fledging ;need to ask one in each pair to hatch....
+  
+  let safe-breeders females with [ mating? and breeding? and not predators? ] ; taking the females on the safe islands...
+  reproduce safe-breeders
+  
+  let unsafe-breeders females with [ mating? and breeding? and predators? ] ; taking the females on the predator infested islands...
+  reproduce unsafe-breeders
+  
+end
+
+to reproduce [breeding-birds]
+  
+  ifelse predators?
+  [
+    let n-breed (random-binomial count(breeding-birds) (chick-predation + natural-chick-mortality) )  * random-normal 1 mortality-sd ;Factoring mortality, predation and noise into the hatch success
+    set n-breed max(list n-breed count(breeding-birds)) ;preventing cases where more are selected than exist
+    let successful-breeders n-of n-breed breeding-birds
+    ;show count successful-breeders
+    
+    ask successful-breeders
+    [
+      ifelse random-float 1 > 0.49
+      [
+        hatch-females 1
+        [
+          raise-chick "orange"
+        ]
+      ]
+      [
+        hatch-males 1
+        [
+          raise-chick "purple"
+        ]
+      ]
+    ]
+  ]
+  [
+    let n-breed (random-binomial count(breeding-birds) (natural-chick-mortality) )  * random-normal 1 mortality-sd ;Factoring mortality, predation and noise into the hatch success
+    set n-breed max(list n-breed count(breeding-birds)) ;preventing cases where more are selected than exist
+    let successful-breeders n-of n-breed breeding-birds
+    
+    ;show count successful-breeders
+    
+    ask successful-breeders
+    [
+      ifelse random-float 1 > 0.49
+      [
+        hatch-females 1
+        [
+          raise-chick "orange"
+        ]
+      ]
+      [
+        hatch-males 1
+        [
+          raise-chick "purple"
+        ]
+      ]
+    ]
+  ]
+  
+  
+end
+
+to raise-chick [ colour ]
+  
+  set color colour
+  set size 3
+  set shape "bird side"
+  set age 0
+  set settled? false
+  set breeding? false
+  set mating? false
+  set last-breeding-success? false
+  set life-stage "Juvenile"
+  set natal-ground-id colony-id
+  set breeding-ground-id 0
+  set breeding-grounds no-patches
+  set mating-id -1
+  set mate no-turtles
+  set burrow no-patches
+  
+end
+
+
+to mortality
+  
+  ;Adult natural mortality
+  let adults turtles with [ life-stage = "Adult" ]
+  let num-adults count adults
+  let adult-fatalities n-of ( random-binomial num-adults adult-mortality ) adults 
+  
+  ask adult-fatalities ;adult mortality
+  [
+    ;show "Adult fatality"
+    if mating-id != -1
+    [
+      widow
+    ]
+    die
+  ]
+  
+  ;Adult predation deaths
+  let adults-at-risk turtles with [ life-stage = "Adult" and predators? ] 
+  let adult-risk-count count adults-at-risk
+  
+  let adult-killed n-of ( random-binomial adult-risk-count adult-predation ) adults-at-risk
+  
+  ask adult-killed;adult predation
+  [
+    ;show "Adult killed"
+    if mating-id != -1
+    [
+      widow
+    ]
+    die
+  ]
+  
+  ;senescence of old birds
+  let seniors turtles with [age > max-age]
+  ask n-of (random-binomial count(seniors) old-mortality) seniors
+  [
+    if mating-id != -1
+    [
+      widow
+    ]
+    die 
+  ]
+  
+end
+
+
+to widow
+  
+  ask mate
+  [
+    set mating-id -1
+    set mate no-turtles
+    set mating? false
+    set burrow no-patches
+  ]
+  
+end
+
+to census
+
+end
+
+;Moving birds off islands, resetting breeding andmating, then clearing burrow current occupancy 
+to season-reset
+  
+  ask turtles
+  [
+    setxy 0 0
+    set breeding? false
+    set mating? false
+  ]
+  
+  ask patches
+  [
+    set occupancy 0
+  ]
+  
+end
+
+
+  
+
+
+
+
+  
+  ;    ;Chick natural mortality
+  ;  let chicks turtles with [ life-stage = "Juvenile" and age = 0 ]
+  ;  let num-chicks count chicks
+  ;  
+  ;  show count chicks
+  ;  
+  ;  
+  ;  let unsuccessful-fledge n-of ( random-binomial num-chicks chick-mortality ) chicks;chick mortality
+  ;  ask unsuccessful-fledge
+  ;  [
+  ;    show "Chick dying"
+  ;    die
+  ;  ]
+  ;
+  ;  ;Chick predation deaths
+  ;  let chicks-at-risk turtles with [ life-stage = "Juvenile" and age = 0 and predators? ]
+  ;  let chick-risk-count count chicks-at-risk
+  ; 
+  ;  show count chicks-at-risk
+  ;  
+  ;  let predator-kills n-of ( random-binomial chick-risk-count chick-predation ) chicks-at-risk
+  ;  ask predator-kills ;chick predation
+  ;  [
+  ;    show "Chick killed"
+  ;    die
+  ;  ]
+  
+
+  
+;  let safe-breeders females with [ mating? and breeding? and not predators? ] ; taking the females on the safe islands...
+;  
+;  ifelse [predators? [
+;    set X ncm * noise
+;    set breeding-birds ...
+;  ] [set X (ncm + predation-rate) * noise
+;    set breeding-birds...
+;    ] 
+;    let successful-breeders n-of (random-binomial count(safe-breeders) natural-chick-mortality) safe-breeders ;... and determining the number of chicks they successfully hatch
+;    
+;    if type predators? show count successful-breeders
+;    
+;    ;Safe island reproduction
+;    
+;    show count successful-breeders
+;    
+;    let unsafe-breeders females with [ mating? and breeding? and predators? ] ; taking the females on the predator infested islands...
+;    let n-breed (random-binomial count(unsafe-breeders) (chick-predation + natural-chick-mortality)) * random-normal 1 0.1 ;PUT SLIDERS - 0.1 especially
+;    let pred-successful-breeders n-breed n-of unsafe-breeders ;... and determining the number of chicks they successfully hatch
+;    set pred-successful-breeders pred-successful-breeders 
+;    ;Predator island reproduction
+;    ask pred-successful-breeders
+;    [
+;      ifelse random-float 1 > 0.49
+;      [
+;        hatch-females 1
+;        [
+;          raise-chick "orange"
+;        ]
+;      ]
+;      [
+;        hatch-males 1
+;        [
+;          raise-chick "purple"
+;        ]
+;      ]
+;    ]
+;    show count(pred-successful-breeders)  

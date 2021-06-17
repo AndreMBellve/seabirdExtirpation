@@ -1,0 +1,122 @@
+;; Code to compute density /distribution functions for various distributions
+
+;; Cauchy  density (x = point of interest, loc = location, scl = scale)
+to-report d-cauchy [x loc scl]
+  report (1 / pi) * ( scl / ((x - loc) ^ 2 + scl ^ 2 ) )
+end    
+
+;; Deviate from Cauchy distribution with location (loc) and scale (scl)
+;; From: Devroye, L. 1986. Non-Uniform Random Variate Generation, Springer, NY
+
+to-report r-cauchy [loc scl]
+  let X (pi * (random-float 1)) ;; Netlogo tan takes degrees not radians
+  report loc + scl * tan(X * (180 / pi))
+
+end
+
+;; generate a binomial deviate (N, p)
+to-report random-binomial [n p]
+  report length filter [a -> a] n-values n [random-float 1 < p]
+end  
+
+;; generate a lognormal deviate with specified mean and sd
+to-report random-lognormal [m s]
+  let x ln (1 + (s / m) ^ 2)
+  let mu ln m - x / 2
+  let sigma sqrt x
+  report exp (mu + random-normal 0 1 * sigma)
+end
+
+;; cdf of Gaussian distribution (canonical)
+to-report cdf-normal [x]
+  let s x
+  let v x
+  let i 1
+
+  while [i < 100]
+  [
+    set v (v * x * x / (2 * i + 1))
+    set s  s + v
+    set i i + 1
+  ]
+
+  report 0.5 + (s / sqrt(2 * pi)) * exp(-( x * x) / 2)
+end
+
+;; cdf of log-Normal distribution
+
+to-report cdf-lnormal[x mu sd]
+   let x-scale (ln(x) - mu) / sd
+   report cdf-normal x-scale
+end
+
+;; Gaussian density return location + scale * tan(M_PI * unif_rand(rng)); (x = point of interest, mu = mean, sigma = SD)
+to-report d-gaussian [x mu sigma]
+  report (1 / (sqrt (2 * pi)  * sigma )) * exp (-((x - mu) ^ 2) / (2 * sigma ^ 2) )
+end
+
+;; Deviate from Pareto distribution (code from VGAM)
+;; See Forbes et al. 2011, Chapter 34
+;; Mean ca/(c-1) for c > 1 and variance ca^2/[(c − 1)^2(c − 2)] for c > 2
+
+;; Deviate from Pareto distribution (code from VGAM)
+;; See Forbes et al. 2011, Chapter 34
+;; Mean ca/(c-1) for c > 1 and variance ca^2/[(c − 1)^2(c − 2)] for c > 2
+
+to-report random-pareto [xm alpha] 
+
+  if xm <= 0 or alpha <= 0 [error "Invalid pareto value" ]
+	let ans xm / (random-float 1) ^ (1 / alpha)
+
+  report ans
+end
+
+;; see: https://stackoverflow.com/questions/38493122/draw-a-random-beta-distribution-in-netlogo
+;; see: https://www.mathworks.com/help/symbolic/mupad_ref/stats-betarandom.html
+;; "The implemented algorithm for the computation of the beta deviates uses gamma deviates x, y to produce a 
+;; beta deviate x/(x + y). For more information see: D. Knuth, Seminumerical Algorithms (1998), Vol. 2, p. 134."
+
+to-report random-beta [ alpha beta ]
+  let XX random-gamma alpha 1
+  let YY random-gamma beta 1
+  report XX / (XX + YY)
+end
+
+to-report get-alpha [mu var] 
+  report (((1 - mu) / var) - (1 / mu)) * (mu ^ 2)
+end
+
+to-report get-beta [mu alpha] 
+  report alpha * (1 / mu - 1)
+end  
+
+to-report get-beta-params [ mu var ] 
+     let alpha ((1 - mu) / var - 1 / mu) * mu ^ 2
+     let beta alpha * (1 / mu - 1)
+     report (list alpha beta)
+end
+
+
+;; Estimate parameters for log secant distribution following Halley & Inchasuti 2002. Oikos
+;to-report fit-logsecant [r log-dist scalar ]
+;  
+;  let r-scaled map [ i -> i * scalar ] r
+;  
+;  if (log-dist = TRUE) [
+;    set r-scaled map [ i -> i + .01] r-scaled
+;    set r-scaled map ln r-scaled
+;  ]  
+;  
+;  let a median r-scaled
+;  let dm 2 * abs (ln tan ((pi / 8) * (180 / pi)))   ;; tan in NetLogo takes deg not rad
+;  ;let q (get-quantiles-r r-scaled 0.25)
+;  let q get-percentiles dispersal-distance-list 0.75
+;  ;r:put "ddl" r-scaled
+;  ;let q r:get "quantile(ddl, c(0.25, 0.75))"
+;  
+;  let nm  (item 1 q) - (item 0 q) 
+;  
+;  let b nm / dm
+;  
+;  report (list a b)
+;end

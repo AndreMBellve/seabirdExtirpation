@@ -1,0 +1,253 @@
+to init-patches ;creating default patches and patch-sets (all values set at value for the sea)
+  ask patches
+  [
+    set habitable? FALSE
+    set colony-id 0
+    set habitat-attrac 0
+    set occupancy 0
+    set occupancy-limit 0
+    set predators? false
+    set pcolor blue
+    
+    ifelse nhb-rad <= 1 [set neighbourhood (patch-set self neighbors)][set neighbourhood patches in-radius nhb-rad]
+  ]
+end
+
+to grow-islands ;creating islands and colonies
+  
+  let idx 1 ;initialising the round counter for definign the habitat-id variable
+  
+  repeat num-clust
+  [
+    ask one-of patches with [ count patches with [ pcolor = green ] in-radius (clust-area + 1)  = 0 ]
+    [
+      let cluster patches in-radius clust-area ;of patch-here;creating patch-set of the cluster
+      
+      set pcolor green
+      set habitable? TRUE ;setting this to be desireable habitat for the turtle
+      set colony-id idx ;setting habitat-id to a unique value
+      
+      ask n-of (count(cluster) * clust-density) cluster ;expanding the patch as a function of density and user defined area
+      [
+        set pcolor green
+        set habitable? TRUE ;see above for this line and the one below
+        set colony-id idx
+      ]
+    ]
+    set idx (idx + 1) ;updating idx iteration to keep habitat-id names unique
+  ]
+  
+  set colonies patches with [ colony-id > 0 ] ;the baseline initialisation for cells is 0 (i.e. sea cells are 0)
+  
+  ask patches with [ habitable? ]
+  [
+    ifelse random-float 1 < 0.2 [set occupancy-limit random-poisson 5][set occupancy-limit random-poisson 80]
+  ]
+  
+  repeat num-predator-islands ;will create a number of predator islands up to user defined value
+  [
+    ask patches with [ colony-id = (random idx + 1) and not predators? ] ;ask a random colony without predators to become predator infested
+    [
+      set predators? true
+    ]
+  ]
+  
+  
+  set the-islands patches with [ habitable? ] ;convenience name
+  set the-sea patches with [ not habitable? ]
+  set pred-patches patches with [ predators? ]
+  set safe-patches patches with [ habitable? = true and not predators? ]
+  
+  set island-id remove-duplicates [colony-id] of the-islands
+  
+  ask the-islands
+  [
+    set maxK max  [ occupancy-limit ] of neighbourhood
+    set habitat-attrac ( occupancy-limit / maxK ) * 0.3
+  ]
+  
+end
+
+to init-adults
+  
+  ;initialising males/females based on sex-ratios
+  create-males starting-seabird-pop * sex-ratio ;assuming even sex-ratios to begin with
+  create-females starting-seabird-pop * (1 - sex-ratio)
+  
+  ;initialising basic parameters of birds
+  ask turtles
+  [
+    set shape "bird side"
+    setxy 0 0 ;making them all start on the left edge of the ma
+    set age age-at-first-breeding + random-poisson 2 ;adding some age variability
+    set settled? false ;Has not been assigned a colony
+    set breeding? false ;Has not found a patch
+    set mating? false ;Has not found a mate
+    set mating-id -1
+    set last-breeding-success? true
+    set size 2
+    set life-stage "Adult"
+    set mate no-turtles
+    set burrow no-patches
+  ]
+  
+  ask females
+  [
+    set color orange
+  ]
+  
+  ask males
+  [
+    set color violet
+  ]
+  
+  set breeders turtles with [ life-stage = "Adult"]
+end
+
+to assign-colonies
+  
+  if debug? [ show island-id ]
+  
+  ask breeders with [not settled?]
+  [
+    ;set breeding-ground-id to match a colony-id and that the occupancy is less than the occupancy-limit
+    let target-grd one-of island-id
+    set breeding-ground-id target-grd
+    set natal-ground-id target-grd ;intialising as the breeding-grounds = natal grounds
+    set settled? true
+    set breeding-grounds patch-set patches with [ colony-id = target-grd ]
+    ; if [debug?] [ show "target grd id: " show target-grd ]
+  ]
+  
+end
+
+to assign-mates
+  ;initialising mating pairs  
+  foreach  island-id  [n ->  
+    while [ (count females with [ life-stage = "Adult" and breeding-ground-id = n and mating-id = -1 ]  > 0 ) and count( males with [ life-stage = "Adult" and breeding-ground-id = n and mating-id = -1 ] )  > 0]
+    [
+      if debug?
+      [
+        show n
+      ]
+      
+      let free-females (turtle-set females with [ mating-id = -1 and life-stage = "Adult" and breeding-ground-id = n ] )
+      if any? free-females
+      [
+        
+        if debug?
+        [
+          show count(free-females)
+        ]
+        
+        let f-mate one-of free-females
+        let free-males (turtle-set males with [ mating-id = -1 and life-stage = "Adult" and breeding-ground-id = n ])
+        
+        if any? free-males
+        [       
+          if debug?
+          [
+            show count(free-males)
+          ]
+          
+          let m-mate one-of free-males
+          ask f-mate 
+          [ 
+            if debug?
+            [
+              show [ who ] of m-mate ;; GP mate -> m-mate
+            ]
+            
+            set mate m-mate
+            set mating-id [ who ] of m-mate
+            set mating? true
+          ]
+          
+          ask m-mate 
+          [ 
+            if debug?
+            [
+              show [ who ] of f-mate 
+            ]
+            
+            set mate f-mate
+            set mating-id [ who ] of f-mate
+            set mating? true 
+          ]
+        ]
+      ]
+    ]
+  ]
+end
+
+to assign-burrows
+  
+  ask males with [ life-stage = "Adult" and breeding-grounds != no-patches ]
+  [
+    set burrow one-of breeding-grounds with [ occupancy < occupancy-limit ]
+    if debug? [ show burrow ] 
+  ]
+  
+end
+
+to init-juveniles
+  
+  create-males starting-juveniles
+  [
+    set shape "bird side"
+    setxy 0 0 ;making them all start on the left edge of the map
+    set settled? false
+    set breeding? false
+    set mating? false
+    set mating-id -1
+    set age random age-at-first-breeding ;will select an integer that is between 0 and 1 year short of breeding age
+    set last-breeding-success? false
+    set breeding-ground-id 0
+    set breeding-grounds no-patches
+    set size 3
+    set life-stage "Juvenile"
+    set mate no-turtles
+    set burrow no-patches
+  ]
+  
+  create-females starting-juveniles
+  [
+    set shape "bird side"
+    setxy 0 0
+    set settled? false
+    set breeding? false
+    set mating? false
+    set mating-id -1
+    set age random age-at-first-breeding ;will select an integer that is between 0 and 1 year short of breeding age
+    set last-breeding-success? false
+    set breeding-ground-id 0
+    set breeding-grounds no-patches
+    set size 3
+    set life-stage "Juvenile"
+    set mate no-turtles
+    set burrow no-patches
+  ]
+  
+  
+  ask females
+  [
+    set color orange
+  ]
+  
+  ask males
+  [
+    set color violet
+  ]
+  
+  set recruits turtles with [ life-stage = "Juvenile"]
+end
+
+to assign-natal-grounds
+  ask recruits
+  [ 
+    set natal-ground-id one-of island-id ;Assigning a random colony as natal grounds
+  ]
+end
+
+
+

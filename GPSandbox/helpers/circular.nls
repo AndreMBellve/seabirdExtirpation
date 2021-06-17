@@ -1,0 +1,129 @@
+
+;; Random number generators for various wrapped distributions, modified from circular packge in R
+
+;; From: Devroye, L. 1986. Non-Uniform Random Variate Generation, Springer, NY
+
+;; Wrapped cauchy as modified from r:: circular
+to-report r-wrappedcauchy [n mu rho as-rad]
+  let return-list n-values n [0]  
+  
+  if rho = 0
+  [
+    set return-list map [i -> random-float 2 * pi] return-list
+  ]
+
+  ifelse rho = 1
+  [ 
+    set return-list n-values n [mu]
+  ]
+  [
+    if rho != 0 
+    [
+      let scale (- ln(rho))
+      let obs 0
+      
+      while [obs < n]
+      [
+        ifelse as-rad 
+        [ set return-list replace-item obs return-list ((r-cauchy mu scale) mod (pi * 2)) ]
+        [ set return-list replace-item obs return-list (r-cauchy mu scale) ]
+        
+        set obs obs + 1
+      ]
+    ]
+  ]
+    
+  ifelse n = 1
+  [report first return-list]
+  [report return-list]    
+end
+
+ 
+;; Wrapped normal (Gaussian) as modified from r:: circular
+to-report r-wrappednormal [n mu rho as-rad]
+  let return-list n-values n [0]  
+  
+  if rho = 0
+  [
+    set return-list map [i -> random-float 2 * pi] return-list
+  ]
+
+  ifelse rho = 1
+  [ 
+    set return-list n-values n [mu]
+  ]
+  [
+    if rho != 0 
+    [
+      let scale  sqrt(-2 * ln(rho))
+      let obs 0
+      
+      while [obs < n]
+      [
+        ifelse as-rad 
+        [ set return-list replace-item obs return-list ((random-normal mu scale) mod (pi * 2)) ]
+        [ set return-list replace-item obs return-list (random-normal mu scale) ]
+        
+        set obs obs + 1
+      ]
+    ]
+  ]
+    
+  ifelse n = 1
+  [report first return-list]
+  [report return-list]    
+end
+
+;; von Mises deviate modified code from rvonmises.c in R::circular
+;; Best, D. and Fisher, N. (1979). Efficient simulation of the von Mises 
+;; distribution. Applied Statistics, 28, 152–157.
+
+to-report r-vm [n mu kappa]
+;; mu = mean direction of von Mises distribution
+;; kappa = concentration parameter of von Mises distribution (gt 0)
+  
+  let return-list []
+
+  let a 1 + sqrt(1 + 4 * kappa ^ 2)
+  let b  (a - sqrt( 2 * a ))/(2 * kappa)
+  let r  (1 + b ^ 2) / (2 * b);
+  let obs 0
+  
+  while [obs < n]
+  [
+    let U1 random-float 1
+    let z cos((U1 * pi) * (180 / pi))
+    let f (1 + r * z)/(r + z)
+    let c kappa * (r - f)
+    
+    let  U2 random-float 1
+     
+    ifelse c * (2 - c) - U2 > 0
+    [
+      let U3 random-float 1
+      ifelse U3 > 0.5 
+         [set return-list lput ((acos(f)* (pi / 180)) + mu) return-list ] 
+         [set return-list lput (-(acos(f)* (pi / 180)) + mu) return-list ]
+      set obs obs + 1
+    ]
+    
+    [
+      if ln(c / U2) + 1 - c >= 0 
+      [
+				let U3 random-float 1 
+        
+        ifelse U3 > 0.50
+          [ set return-list lput ((acos(f)* (pi / 180)) + mu) return-list ]
+          [ set return-list lput (-(acos(f)* (pi / 180)) + mu) return-list ]
+       
+        set obs obs + 1
+      ]
+    ]
+  ]
+ 
+  
+  ifelse n = 1
+  [report first return-list]
+  [report return-list]  
+
+end

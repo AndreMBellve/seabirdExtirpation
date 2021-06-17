@@ -13,45 +13,27 @@ __includes
 
 globals
 [
-  the-islands
+  the-land
   the-sea
-  the-shore
-
-  island-id
-  colonies
-
   pred-patches
   safe-patches
-
+  colonies
   breeders
   recruits
-  new-recruits
 
-  pop-size
 ]
+
 
 patches-own
 [
   habitable? ;whether this is a habitable patch (T/F)
   colony-id ;which colony this belongs too
-
   habitat-attrac ;the attractiveness of the patch
   occupancy ;the number of birds in this patch
   occupancy-limit ;the maximum number of birds the patch can have
   neighbourhood ;agentset of all patches
-  maxK
-
   predators? ;whether there are predators in this patch
-
-
-
-
-  low-k             ;; capacity and
-  low-value-resource  ;; current level of low value resource
-
-  mh-d
-  on-island?
-  edge-shell        ;; used by irregular island code
+  maxK
 ]
 
 turtles-own
@@ -66,9 +48,6 @@ turtles-own
   life-stage ;Juvenile/Adults
   mating-id ;identifier for mating pairs
   mate ;agent-set containing mate
-  burrow ;a single patch that this bird last bred at. Males only.
-
-
   last-breeding-success? ;T/F indicating whether their last breeding attempt was successful or unsuccessful
 ]
 
@@ -81,7 +60,6 @@ breed
 [
   females female ;female birds
 ]
-
 
 to setup
 
@@ -98,8 +76,7 @@ to setup
   init-juveniles
   assign-natal-grounds
 
-  set pop-size []
-
+  set the-land patches with [pcolor = green]
 end
 
 to go
@@ -112,29 +89,19 @@ to go
     show "Philopatry check"
     philopatry-check ;checking if new recruits are natal ground bound
 
-    ;x time steps potential island change or leave the world
-
     show "Mating"
-    find-burrow ;male only
+    find-breeding-ground ;male only
+
     find-mate ;female only
 
-    show "Chick-rearing"
-
-    show "Fledging"
-    fledging
-
-    show "Adult Death"
+    show "Death"
     mortality
 
-    ;census
-    ;let data (list count turtles count males count )
+    show "Fledging"
+    fledge
 
     show "New Year"
     season-reset
-
-
-
-    ;set pop-size lput data pop-size
 
     tick
   ]
@@ -156,11 +123,11 @@ end
 GRAPHICS-WINDOW
 521
 33
-1034
-547
+1326
+839
 -1
 -1
-5.0
+7.9
 1
 10
 1
@@ -174,8 +141,8 @@ GRAPHICS-WINDOW
 50
 -50
 50
-0
-0
+1
+1
 1
 ticks
 30.0
@@ -189,7 +156,7 @@ starting-seabird-pop
 starting-seabird-pop
 0
 1000
-516.0
+89.0
 1
 1
 NIL
@@ -276,6 +243,36 @@ HORIZONTAL
 
 SLIDER
 22
+640
+194
+673
+detect-range
+detect-range
+0
+10
+5.0
+1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+23
+690
+195
+723
+walk-correlation
+walk-correlation
+0
+360
+87.0
+1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+22
 291
 194
 324
@@ -313,7 +310,7 @@ sex-ratio
 sex-ratio
 0
 1
-0.58
+0.5
 0.01
 1
 NIL
@@ -338,7 +335,7 @@ density-lambda
 density-lambda
 0
 200
-42.0
+40.0
 1
 1
 NIL
@@ -346,14 +343,14 @@ HORIZONTAL
 
 SLIDER
 22
-425
-197
-458
+563
+194
+596
 chick-predation
 chick-predation
 0
 1
-0.69
+0.34
 0.01
 1
 NIL
@@ -361,14 +358,14 @@ HORIZONTAL
 
 SLIDER
 22
-545
-197
-578
+386
+194
+419
 adult-mortality
 adult-mortality
 0
 1
-0.05
+0.02
 0.01
 1
 NIL
@@ -376,44 +373,44 @@ HORIZONTAL
 
 SLIDER
 22
-505
-197
-538
-juvenile-mortality
-juvenile-mortality
-0
-1
-0.65
-0.01
-1
-NIL
-HORIZONTAL
-
-SLIDER
-22
+432
+194
 465
-199
-498
-natural-chick-mortality
-natural-chick-mortality
-0
-1
-0.23
-0.01
-1
-NIL
-HORIZONTAL
-
-SLIDER
-22
-585
-197
-618
-adult-predation
-adult-predation
+juvenile-mortality
+juvenile-mortality
 0
 1
 0.1
+0.01
+1
+NIL
+HORIZONTAL
+
+SLIDER
+22
+477
+194
+510
+chick-mortality
+chick-mortality
+0
+1
+0.3
+0.01
+1
+NIL
+HORIZONTAL
+
+SLIDER
+22
+520
+194
+553
+adult-predation
+adult-predation
+0
+1
+0.02
 0.01
 1
 NIL
@@ -443,7 +440,7 @@ starting-juveniles
 starting-juveniles
 0
 500
-204.0
+35.0
 1
 1
 NIL
@@ -470,7 +467,7 @@ age-at-first-breeding
 0
 12
 6.0
-1
+6
 1
 NIL
 HORIZONTAL
@@ -483,8 +480,38 @@ SLIDER
 age-first-return
 age-first-return
 0
+100
+2.0
+1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+255
+430
+427
+463
+time-to-search
+time-to-search
+0
+300
+200.0
+1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+255
+520
+427
+553
+max-tries
+max-tries
+0
 10
-0.0
+5.0
 1
 1
 NIL
@@ -495,21 +522,21 @@ SLIDER
 475
 427
 508
-max-tries
-max-tries
-0
-10
-10.0
+nhb-rad
+nhb-rad
+1
+5
+1.0
 1
 1
 NIL
 HORIZONTAL
 
 PLOT
-1045
-735
-1450
-855
+1335
+30
+1740
+235
 Proportion mating
 Ticks
 Proportion of pairs
@@ -521,13 +548,13 @@ true
 true
 "" ""
 PENS
-"Males" 1.0 0 -13791810 true "" "plot (count males with [ life-stage = \"Adult\" and mating-id > -1]) / count males with [ life-stage = \"Adult\" ]"
-"Females" 1.0 0 -1664597 true "" "plot (count females with [ life-stage = \"Adult\" and mating-id > -1]) / count females with [ life-stage = \"Adult\" ]"
+"Males" 1.0 0 -13791810 true "" "plot (count males with [ mating-id > 1]) / count males"
+"Females" 1.0 0 -1664597 true "" "plot (count females with [ mating-id > 1]) / count females"
 
 PLOT
-1045
+1335
 245
-1450
+1740
 480
 Number of turtles by lifestage
 Number of Turtles
@@ -546,9 +573,9 @@ PENS
 "Juvenile females" 1.0 0 -3508570 true "" "plot count females with [ life-stage = \"Juvenile\" ]"
 
 PLOT
-1045
+1335
 490
-1450
+1740
 730
 Chicks
 Ticks
@@ -566,10 +593,10 @@ PENS
 "Total" 1.0 0 -16777216 true "" "plot count turtles with [ age = 0 ]"
 
 MONITOR
-1575
-100
-1672
-145
+1755
+335
+1852
+380
 Mating Females
 count females with [ mating? ]
 0
@@ -577,10 +604,10 @@ count females with [ mating? ]
 11
 
 MONITOR
-1460
-100
-1567
-145
+1750
+280
+1857
+325
 Breeding Females
 count females with [ breeding? ]
 0
@@ -588,151 +615,15 @@ count females with [ breeding? ]
 11
 
 MONITOR
-1465
+1755
 150
-1557
+1847
 195
-Breeding Males
+Breeding males
 count males with [ breeding? ]
 0
 1
 11
-
-SWITCH
-360
-30
-462
-63
-debug?
-debug?
-1
-1
--1000
-
-SLIDER
-255
-430
-427
-463
-nhb-rad
-nhb-rad
-1
-5
-5.0
-1
-1
-NIL
-HORIZONTAL
-
-PLOT
-1045
-35
-1455
-230
-Colony counts
-Ticks
-Number of Adults
-0.0
-10.0
-0.0
-10.0
-true
-true
-"" ""
-PENS
-"Colony 1 Adults" 1.0 0 -2139308 true "" "plot count turtles with [ life-stage = \"Adult\" and breeding-ground-id = 1 ] "
-"Colony 2 Adults" 1.0 0 -6759204 true "" "plot count turtles with [ life-stage = \"Adult\" and breeding-ground-id = 2 ] "
-"Colony 2 chicks" 1.0 0 -13791810 true "" "plot count turtles with [ age = 0 and natal-ground-id = 2 ] "
-"Colony 1 chicks" 1.0 0 -2674135 true "" "plot count turtles with [ age = 0 and natal-ground-id = 1 ]"
-
-SLIDER
-255
-520
-427
-553
-max-age
-max-age
-0
-100
-37.0
-1
-1
-NIL
-HORIZONTAL
-
-PLOT
-1510
-340
-1710
-490
-Age histogram
-Age
-Frequency
-0.0
-40.0
-0.0
-10.0
-true
-false
-"" ""
-PENS
-"default" 1.0 1 -16777216 true "" "histogram [age] of turtles"
-
-SLIDER
-22
-625
-197
-658
-old-mortality
-old-mortality
-0
-1
-0.8
-0.01
-1
-NIL
-HORIZONTAL
-
-SLIDER
-20
-380
-195
-413
-prop-returning-breeders
-prop-returning-breeders
-0
-1
-0.9
-0.01
-1
-NIL
-HORIZONTAL
-
-MONITOR
-1580
-150
-1662
-195
-Mating Males
-count males with [ mating? ]
-0
-1
-11
-
-SLIDER
-280
-570
-452
-603
-mortality-sd
-mortality-sd
-0
-2
-0.1
-0.01
-1
-NIL
-HORIZONTAL
 
 @#$#@#$#@
 ## WHAT IS IT?
