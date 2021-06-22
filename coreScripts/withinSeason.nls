@@ -24,37 +24,40 @@ to recruit
 end
 
 to philopatry-check
-  ask males with [ settled? = false and life-stage = "Adult" ]
-  [
-    choose-colony male-philopatry
-  ]
+
+  let male-birds males with [ settled? = false and life-stage = "Adult" ]
+  type "New male recruits:" show count(male-birds)
+  choose-colony male-birds male-philopatry
   
-  ask females with [ settled? = false and life-stage = "Adult" ]
-  [
-    choose-colony female-philopatry
-  ]
-  
+  let female-birds females with [ settled? = false and life-stage = "Adult" ]
+    type "New female recruits:" show count(female-birds)
+  choose-colony female-birds female-philopatry
+
 end
 
 
-to choose-colony [ philopatry ]
-  
-  ifelse (random-float 1 < philopatry)
+to choose-colony [ birds philopatry ]
+ 
+  ask birds
   [
-    set breeding-grounds patch-set patches with [ colony-id = [ natal-ground-id ] of myself]
-    set settled? true
-    set breeding-ground-id natal-ground-id
-  ]
-  [
-    set breeding-grounds patch-set patches with [ colony-id > 0 and colony-id != [ natal-ground-id ] of myself] ;randomly selecting a new breeding ground from the remaining others
-    set settled? true
-    set breeding-ground-id one-of [ colony-id ] of breeding-grounds 
+    ifelse (random-float 1 < philopatry)
+    [
+      set breeding-grounds patch-set patches with [ colony-id = [ natal-ground-id ] of myself]
+      set settled? true
+      set breeding-ground-id natal-ground-id
+    ]
+    [
+      set breeding-grounds patch-set patches with [ colony-id > 0 and colony-id != [ natal-ground-id ] of myself] ;randomly selecting a new breeding ground from the remaining others
+      set settled? true
+      set breeding-ground-id one-of [ colony-id ] of breeding-grounds 
+    ]
   ]
   
 end
 
 
 to find-burrow ;a task solely for males  
+  
   let potential-breeders males with [ not breeding? and life-stage = "Adult" ] ;potential-breeders returning
   let returning-breeders n-of (random-binomial count(potential-breeders) prop-returning-breeders) potential-breeders ;actual returning individuals
  
@@ -95,11 +98,13 @@ to find-burrow ;a task solely for males
         let free-burrows count( breeding-grounds with [ occupancy < occupancy-limit ] )
         if free-burrows > 0 
         [ ;else statement if the bird does not have a burrow.
+          move-to one-of breeding-grounds with [ occupancy < occupancy-limit ]
           prospect   
         ]
       ]
     ]
   ]
+  
 end
 
 to prospect
@@ -121,7 +126,7 @@ to prospect
       set tries (tries + 1) ;updating the number of attempts
       if tries >= max-tries
       [
-        setxy 0 0
+        setxy 0 0 ;giving up and flying off
       ]
     ]
   ] ;;put in an alternative for if the tries = 1 or greater
@@ -188,90 +193,64 @@ to find-mate ;a task solely for females
       ] 
     ]
   ]
+  
 end
 
 to fledging ;need to ask one in each pair to hatch....
   
   let safe-breeders females with [ mating? and breeding? and not predators? ] ; taking the females on the safe islands...
-  reproduce safe-breeders
+  reproduce safe-breeders false
   
   let unsafe-breeders females with [ mating? and breeding? and predators? ] ; taking the females on the predator infested islands...
-  reproduce unsafe-breeders
+  reproduce unsafe-breeders true
   
 end
 
-to reproduce [breeding-birds]
-  
-  ifelse predators?
+to reproduce [ breeding-birds predation? ]
+
+  ifelse predation?
   [
-    let n-breed (random-binomial count(breeding-birds) (chick-predation + natural-chick-mortality) )  * random-normal 1 mortality-sd ;Factoring mortality, predation and noise into the hatch success
-    set n-breed max(list n-breed count(breeding-birds)) ;preventing cases where more are selected than exist
+    let total-mortality chick-predation + natural-chick-mortality
+    let n-breed (random-binomial count(breeding-birds) (1 - total-mortality))  * random-normal 1 mortality-sd ;Factoring mortality, predation and noise into the hatch success
+    set n-breed round(min(list n-breed count(breeding-birds))) ;preventing cases where more are selected than exist
     let successful-breeders n-of n-breed breeding-birds
-    ;show count successful-breeders
+    
+    type "Chicks fledged under predation:" show n-breed
     
     ask successful-breeders
     [
-      ifelse random-float 1 > 0.49
+      hatch-chick
+    ]
+  ]
+  [
+    let n-breed (random-binomial count(breeding-birds) (1 - natural-chick-mortality))  * random-normal 1 mortality-sd ;Factoring mortality, predation and noise into the hatch success
+    set n-breed round(min(list n-breed count(breeding-birds))) ;preventing cases where more are selected than exist
+    let successful-breeders n-of n-breed breeding-birds
+    
+    type "Chicks fledged without predation:" show n-breed
+    
+    ask successful-breeders
+    [
+      hatch-chick
+    ]
+  ]      
+  
+end
+
+to hatch-chick
+        ifelse random-float 1 > 0.49
       [
         hatch-females 1
         [
-          raise-chick "orange"
+          raise-chick orange
         ]
       ]
       [
         hatch-males 1
         [
-          raise-chick "purple"
+          raise-chick violet
         ]
       ]
-    ]
-  ]
-  [
-    let n-breed (random-binomial count(breeding-birds) (natural-chick-mortality) )  * random-normal 1 mortality-sd ;Factoring mortality, predation and noise into the hatch success
-    set n-breed max(list n-breed count(breeding-birds)) ;preventing cases where more are selected than exist
-    let successful-breeders n-of n-breed breeding-birds
-    
-    ;show count successful-breeders
-    
-    ask successful-breeders
-    [
-      ifelse random-float 1 > 0.49
-      [
-        hatch-females 1
-        [
-          raise-chick "orange"
-        ]
-      ]
-      [
-        hatch-males 1
-        [
-          raise-chick "purple"
-        ]
-      ]
-    ]
-  ]
-  
-  
-end
-
-to raise-chick [ colour ]
-  
-  set color colour
-  set size 3
-  set shape "bird side"
-  set age 0
-  set settled? false
-  set breeding? false
-  set mating? false
-  set last-breeding-success? false
-  set life-stage "Juvenile"
-  set natal-ground-id colony-id
-  set breeding-ground-id 0
-  set breeding-grounds no-patches
-  set mating-id -1
-  set mate no-turtles
-  set burrow no-patches
-  
 end
 
 

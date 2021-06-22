@@ -32,7 +32,9 @@ globals
 
 patches-own
 [
+
   habitable? ;whether this is a habitable patch (T/F)
+  suitable? ;classifier for whether the patches are particularly suitable for burrows
   colony-id ;which colony this belongs too
 
   habitat-attrac ;the attractiveness of the patch
@@ -94,6 +96,7 @@ to setup
   init-adults
   assign-colonies
   assign-mates
+  assign-burrows
 
   init-juveniles
   assign-natal-grounds
@@ -170,12 +173,12 @@ GRAPHICS-WINDOW
 0
 0
 1
--50
-50
--50
-50
 0
+100
 0
+100
+1
+1
 1
 ticks
 30.0
@@ -189,17 +192,17 @@ starting-seabird-pop
 starting-seabird-pop
 0
 1000
-516.0
+518.0
 1
 1
 NIL
 HORIZONTAL
 
 BUTTON
-152
-36
-216
-69
+150
+35
+214
+68
 Setup
 setup
 NIL
@@ -253,7 +256,7 @@ clust-area
 clust-area
 0
 20
-8.0
+11.0
 1
 1
 NIL
@@ -313,7 +316,7 @@ sex-ratio
 sex-ratio
 0
 1
-0.58
+0.57
 0.01
 1
 NIL
@@ -330,15 +333,15 @@ Higher value will skew towards males\n
 1
 
 SLIDER
-253
-252
-425
-285
-density-lambda
-density-lambda
+255
+230
+427
+263
+low-lambda
+low-lambda
 0
 200
-42.0
+5.0
 1
 1
 NIL
@@ -353,7 +356,7 @@ chick-predation
 chick-predation
 0
 1
-0.69
+0.99
 0.01
 1
 NIL
@@ -368,7 +371,7 @@ adult-mortality
 adult-mortality
 0
 1
-0.05
+0.0
 0.01
 1
 NIL
@@ -383,7 +386,7 @@ juvenile-mortality
 juvenile-mortality
 0
 1
-0.65
+0.0
 0.01
 1
 NIL
@@ -398,7 +401,7 @@ natural-chick-mortality
 natural-chick-mortality
 0
 1
-0.23
+0.0
 0.01
 1
 NIL
@@ -413,7 +416,7 @@ adult-predation
 adult-predation
 0
 1
-0.1
+0.0
 0.01
 1
 NIL
@@ -484,7 +487,7 @@ age-first-return
 age-first-return
 0
 10
-0.0
+6.0
 1
 1
 NIL
@@ -499,17 +502,17 @@ max-tries
 max-tries
 0
 10
-10.0
+0.0
 1
 1
 NIL
 HORIZONTAL
 
 PLOT
-1045
-735
-1450
-855
+585
+565
+990
+685
 Proportion mating
 Ticks
 Proportion of pairs
@@ -566,10 +569,10 @@ PENS
 "Total" 1.0 0 -16777216 true "" "plot count turtles with [ age = 0 ]"
 
 MONITOR
-1575
-100
-1672
-145
+1605
+45
+1702
+90
 Mating Females
 count females with [ mating? ]
 0
@@ -577,10 +580,10 @@ count females with [ mating? ]
 11
 
 MONITOR
-1460
-100
-1567
-145
+1490
+45
+1597
+90
 Breeding Females
 count females with [ breeding? ]
 0
@@ -588,10 +591,10 @@ count females with [ breeding? ]
 11
 
 MONITOR
-1465
-150
-1557
-195
+1495
+95
+1587
+140
 Breeding Males
 count males with [ breeding? ]
 0
@@ -599,10 +602,10 @@ count males with [ breeding? ]
 11
 
 SWITCH
-360
-30
-462
-63
+0
+10
+102
+43
 debug?
 debug?
 1
@@ -654,7 +657,7 @@ max-age
 max-age
 0
 100
-37.0
+39.0
 1
 1
 NIL
@@ -709,10 +712,10 @@ NIL
 HORIZONTAL
 
 MONITOR
-1580
-150
-1662
-195
+1610
+95
+1692
+140
 Mating Males
 count males with [ mating? ]
 0
@@ -720,15 +723,75 @@ count males with [ mating? ]
 11
 
 SLIDER
-280
-570
-452
-603
+255
+565
+427
+598
 mortality-sd
 mortality-sd
 0
 2
-0.1
+0.06
+0.01
+1
+NIL
+HORIZONTAL
+
+SLIDER
+255
+610
+427
+643
+prop-suitable
+prop-suitable
+0
+1
+0.42
+0.01
+1
+NIL
+HORIZONTAL
+
+SLIDER
+255
+650
+427
+683
+habitat-aggregation
+habitat-aggregation
+0
+1
+0.08
+0.01
+1
+NIL
+HORIZONTAL
+
+SLIDER
+255
+265
+427
+298
+high-lambda
+high-lambda
+0
+100
+63.0
+1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+255
+690
+427
+723
+diffusion-prop
+diffusion-prop
+0
+1
+0.3
 0.01
 1
 NIL

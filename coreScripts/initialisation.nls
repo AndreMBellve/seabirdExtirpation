@@ -1,16 +1,18 @@
 to init-patches ;creating default patches and patch-sets (all values set at value for the sea)
+  
   ask patches
   [
     set habitable? FALSE
+    set suitable? false 
     set colony-id 0
     set habitat-attrac 0
     set occupancy 0
     set occupancy-limit 0
     set predators? false
     set pcolor blue
-    
-    ifelse nhb-rad <= 1 [set neighbourhood (patch-set self neighbors)][set neighbourhood patches in-radius nhb-rad]
+    set neighbourhood no-patches
   ]
+  
 end
 
 to grow-islands ;creating islands and colonies
@@ -39,11 +41,6 @@ to grow-islands ;creating islands and colonies
   
   set colonies patches with [ colony-id > 0 ] ;the baseline initialisation for cells is 0 (i.e. sea cells are 0)
   
-  ask patches with [ habitable? ]
-  [
-    ifelse random-float 1 < 0.2 [set occupancy-limit random-poisson 5][set occupancy-limit random-poisson 80]
-  ]
-  
   repeat num-predator-islands ;will create a number of predator islands up to user defined value
   [
     ask patches with [ colony-id = (random idx + 1) and not predators? ] ;ask a random colony without predators to become predator infested
@@ -52,19 +49,105 @@ to grow-islands ;creating islands and colonies
     ]
   ]
   
-  
   set the-islands patches with [ habitable? ] ;convenience name
+  set island-id remove-duplicates [colony-id] of the-islands
   set the-sea patches with [ not habitable? ]
   set pred-patches patches with [ predators? ]
   set safe-patches patches with [ habitable? = true and not predators? ]
   
-  set island-id remove-duplicates [colony-id] of the-islands
+
+  
+  foreach island-id [n -> 
+    dig-burrows n
+  ]
+  
+  ask patches with [ habitable? ]
+  [
+    ifelse nhb-rad <= 1 [set neighbourhood (patch-set self neighbors with [ habitable? ])][set neighbourhood patches with [ habitable? ] in-radius nhb-rad] ; set neighbourhoods for only island patches
+  ]
   
   ask the-islands
   [
     set maxK max  [ occupancy-limit ] of neighbourhood
     set habitat-attrac ( occupancy-limit / maxK ) * 0.3
   ]
+  
+end
+
+to dig-burrows [ n ]
+  
+  let island-patches patches with [ colony-id = n ] ;looking at only this island
+  let island-size count island-patches ;counting island size for determining suitability
+  
+  ;; seeds the grid with one patch as suitable
+  ask one-of island-patches [ set suitable? true]
+  let filled 1
+  
+  ;; this sequentially fills the grid by selecting patches and making them suitable
+  while [filled <= (prop-suitable * island-size)]
+  [
+    ;; if rnd test is less than attract-suitable then an *unsuitable* patch next to a suitable patch is made suitable
+    ifelse random-float 1 <= habitat-aggregation
+    [
+      ask one-of [ neighbors with [ habitable? ] ] of (island-patches with [suitable?])
+      [
+        if suitable? = false
+        [
+          set suitable? true
+          set filled filled + 1
+        ]
+      ]
+    ]
+    
+    ;; otherwise pick a patch at random (this could ne neighbouring a suitable patch)
+    ;; if you want to make sure it does not you'd need ot use
+    ;; ask one-of patches with [(not suitable?) and (count neighbors with [suitable?] = 0)]
+    [
+      ask one-of patches with [habitable? and not suitable?]
+      ;;ask one-of patches with [(not suitable?) and (count neighbors with [suitable?] = 0)]
+      [
+        set suitable? true
+        set filled filled + 1
+      ]
+    ]
+ ]
+  
+  ;Now set two different poisson distributions
+  ask island-patches 
+  [
+    ifelse suitable? 
+    [
+      set occupancy-limit random-poisson high-lambda
+    ]
+    [
+      set occupancy-limit random-poisson low-lambda
+    ]
+  ]
+  
+  
+  ;Now diffuse surface
+  diffuse occupancy-limit diffusion-prop
+  
+  ask patches
+  [
+    set occupancy-limit floor occupancy-limit
+  ]
+  
+  ;Removing occupancy limits that shouldn't exist
+  ask the-sea 
+  [
+    set occupancy-limit 0
+  ]
+  
+ 
+  let min-occ-lim min [ occupancy-limit ] of island-patches
+  let max-occ-lim max [ occupancy-limit ] of island-patches
+  
+ ask island-patches
+  [ 
+    set pcolor scale-color green occupancy-limit max-occ-lim min-occ-lim
+  ]
+  
   
 end
 
@@ -102,6 +185,7 @@ to init-adults
   ]
   
   set breeders turtles with [ life-stage = "Adult"]
+  
 end
 
 to assign-colonies
@@ -192,40 +276,15 @@ end
 
 to init-juveniles
   
-  create-males starting-juveniles
+  create-males starting-juveniles / 2
   [
-    set shape "bird side"
-    setxy 0 0 ;making them all start on the left edge of the map
-    set settled? false
-    set breeding? false
-    set mating? false
-    set mating-id -1
-    set age random age-at-first-breeding ;will select an integer that is between 0 and 1 year short of breeding age
-    set last-breeding-success? false
-    set breeding-ground-id 0
-    set breeding-grounds no-patches
-    set size 3
-    set life-stage "Juvenile"
-    set mate no-turtles
-    set burrow no-patches
+    raise-chick violet
   ]
   
-  create-females starting-juveniles
+  create-females starting-juveniles / 2
   [
-    set shape "bird side"
-    setxy 0 0
-    set settled? false
-    set breeding? false
-    set mating? false
-    set mating-id -1
-    set age random age-at-first-breeding ;will select an integer that is between 0 and 1 year short of breeding age
-    set last-breeding-success? false
-    set breeding-ground-id 0
-    set breeding-grounds no-patches
-    set size 3
-    set life-stage "Juvenile"
-    set mate no-turtles
-    set burrow no-patches
+
+    raise-chick orange
   ]
   
   
@@ -236,11 +295,35 @@ to init-juveniles
   
   ask males
   [
-    set color violet
+    set color violet 
   ]
   
   set recruits turtles with [ life-stage = "Juvenile"]
+  
 end
+
+
+to raise-chick [ colour ]
+  
+  set color colour
+  
+  set size 3
+  set shape "bird side"
+  set age 0
+  set settled? false
+  set breeding? false
+  set mating? false
+  set last-breeding-success? false
+  set life-stage "Juvenile"
+  set natal-ground-id colony-id
+  set breeding-ground-id 0
+  set breeding-grounds no-patches
+  set mating-id -1
+  set mate no-turtles
+  set burrow no-patches
+  
+end
+
 
 to assign-natal-grounds
   ask recruits
