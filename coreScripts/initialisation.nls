@@ -72,6 +72,8 @@ to grow-islands ;creating islands and colonies
     set habitat-attrac ( occupancy-limit / maxK ) * 0.3
   ]
   
+  
+  
 end
 
 to dig-burrows [ n ]
