@@ -58,6 +58,7 @@ patches-own
 
 turtles-own
 [
+
   settled? ;Whether or not this bird has found a breeding ground
   breeding? ;Whether or not it has found a patch within the colony (reset yearly)
   mating? ;T/F of whether the bird is paired
@@ -72,6 +73,7 @@ turtles-own
 
 
   last-breeding-success? ;T/F indicating whether their last breeding attempt was successful or unsuccessful
+
 ]
 
 breed
@@ -256,7 +258,7 @@ clust-area
 clust-area
 0
 20
-11.0
+18.0
 1
 1
 NIL
@@ -316,7 +318,7 @@ sex-ratio
 sex-ratio
 0
 1
-0.57
+0.59
 0.01
 1
 NIL
@@ -341,7 +343,7 @@ low-lambda
 low-lambda
 0
 200
-5.0
+3.0
 1
 1
 NIL
@@ -356,7 +358,7 @@ chick-predation
 chick-predation
 0
 1
-0.99
+0.52
 0.01
 1
 NIL
@@ -371,7 +373,7 @@ adult-mortality
 adult-mortality
 0
 1
-0.0
+0.06
 0.01
 1
 NIL
@@ -386,7 +388,7 @@ juvenile-mortality
 juvenile-mortality
 0
 1
-0.0
+0.43
 0.01
 1
 NIL
@@ -401,7 +403,7 @@ natural-chick-mortality
 natural-chick-mortality
 0
 1
-0.0
+0.22
 0.01
 1
 NIL
@@ -416,7 +418,7 @@ adult-predation
 adult-predation
 0
 1
-0.0
+0.03
 0.01
 1
 NIL
@@ -431,7 +433,7 @@ num-predator-islands
 num-predator-islands
 0
 5
-1.0
+5.0
 1
 1
 NIL
@@ -446,22 +448,11 @@ starting-juveniles
 starting-juveniles
 0
 500
-204.0
+156.0
 1
 1
 NIL
 HORIZONTAL
-
-SWITCH
-39
-125
-178
-158
-juvenile-recruit
-juvenile-recruit
-1
-1
--1000
 
 SLIDER
 254
@@ -487,7 +478,7 @@ age-first-return
 age-first-return
 0
 10
-6.0
+10.0
 1
 1
 NIL
@@ -500,9 +491,9 @@ SLIDER
 508
 max-tries
 max-tries
-0
+1
 10
-0.0
+10.0
 1
 1
 NIL
@@ -512,7 +503,7 @@ PLOT
 585
 565
 990
-685
+740
 Proportion mating
 Ticks
 Proportion of pairs
@@ -524,8 +515,8 @@ true
 true
 "" ""
 PENS
-"Males" 1.0 0 -13791810 true "" "plot (count males with [ life-stage = \"Adult\" and mating-id > -1]) / count males with [ life-stage = \"Adult\" ]"
-"Females" 1.0 0 -1664597 true "" "plot (count females with [ life-stage = \"Adult\" and mating-id > -1]) / count females with [ life-stage = \"Adult\" ]"
+"Males" 1.0 0 -13791810 true "" "plot (count males with [ life-stage = \"Adult\" and breeding? and mating-id > -1]) / count males with [ life-stage = \"Adult\" ]"
+"Females" 1.0 0 -1664597 true "" "plot (count females with [ life-stage = \"Adult\" and breeding? and mating-id > -1]) / count females with [ life-stage = \"Adult\" ]"
 
 PLOT
 1045
@@ -634,7 +625,7 @@ PLOT
 230
 Colony counts
 Ticks
-Number of Adults
+Number of Individuals
 0.0
 10.0
 0.0
@@ -705,7 +696,7 @@ prop-returning-breeders
 prop-returning-breeders
 0
 1
-0.9
+0.92
 0.01
 1
 NIL
@@ -731,7 +722,7 @@ mortality-sd
 mortality-sd
 0
 2
-0.06
+0.22
 0.01
 1
 NIL
@@ -776,7 +767,7 @@ high-lambda
 high-lambda
 0
 100
-63.0
+69.0
 1
 1
 NIL
@@ -796,6 +787,17 @@ diffusion-prop
 1
 NIL
 HORIZONTAL
+
+SWITCH
+0
+50
+102
+83
+verbose?
+verbose?
+1
+1
+-1000
 
 @#$#@#$#@
 ## WHAT IS IT?

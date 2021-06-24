@@ -165,6 +165,8 @@ to init-adults
     set age age-at-first-breeding + random-poisson 2 ;adding some age variability
     set settled? false ;Has not been assigned a colony
     set breeding? false ;Has not found a patch
+    set breeding-ground-id 0
+    set breeding-grounds no-patches
     set mating? false ;Has not found a mate
     set mating-id -1
     set last-breeding-success? true
@@ -200,7 +202,7 @@ to assign-colonies
     set natal-ground-id target-grd ;intialising as the breeding-grounds = natal grounds
     set settled? true
     set breeding-grounds patch-set patches with [ colony-id = target-grd ]
-    ; if [debug?] [ show "target grd id: " show target-grd ]
+    ; if [debug?] [ show "target grd id: " show target-grd ]  
   ]
   
 end
@@ -244,7 +246,6 @@ to assign-mates
             
             set mate m-mate
             set mating-id [ who ] of m-mate
-            set mating? true
           ]
           
           ask m-mate 
@@ -255,7 +256,6 @@ to assign-mates
             ]
             
             set mate f-mate
-            set mating-id [ who ] of f-mate
             set mating? true 
           ]
         ]

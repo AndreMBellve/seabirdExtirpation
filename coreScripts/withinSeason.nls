@@ -21,6 +21,7 @@ to recruit
   ]
   
   set breeders turtles with [ life-stage = "Adult" ]
+  
 end
 
 to philopatry-check
@@ -36,7 +37,7 @@ to philopatry-check
 end
 
 
-to choose-colony [ birds philopatry ]
+to choose-colony [ birds philopatry ] ;an agentset of birds who need to choose a colony and the philopatry for that sex
  
   ask birds
   [
@@ -58,7 +59,7 @@ end
 
 to find-burrow ;a task solely for males  
   
-  let potential-breeders males with [ not breeding? and life-stage = "Adult" ] ;potential-breeders returning
+  let potential-breeders males with [ settled? and not breeding? and life-stage = "Adult" ] ;potential-breeders returning
   let returning-breeders n-of (random-binomial count(potential-breeders) prop-returning-breeders) potential-breeders ;actual returning individuals
  
   if any? returning-breeders ;defensive to make sure that some birds exist.
@@ -76,9 +77,7 @@ to find-burrow ;a task solely for males
         ;moving in?
         ifelse [ occupancy ] of burrow < [ occupancy-limit ] of burrow ;checking there is room still
         [
-          ;yes? then stay here
-          set occupancy occupancy + 1
-          set breeding? true
+          est-burrow
         ]
         ;if their current burrow is occupied...
         [ 
@@ -113,29 +112,55 @@ to prospect
   
   while [ tries < max-tries ]
   [
-    move-to one-of neighbourhood with [ occupancy < occupancy-limit ]
-    ifelse random-float 1 < habitat-attrac
+    let alternatives neighbourhood with [ occupancy < occupancy-limit and habitat-attrac >= [ habitat-attrac ] of self ] ;looking at nearby alternatives
+    ifelse count(alternatives) > 0 
     [
-      set occupancy (occupancy + 1)
-      set habitat-attrac (patch-occ * 0.3) + (hab-quality * 0.3) + (local-occ * 0.3) ;updating attractiveness
-      set breeding? true
-      set tries (tries + max-tries) ; ending
-      set burrow patch-here
+      move-to one-of alternatives
+      ifelse random-float 1 < habitat-attrac
+      [
+        est-burrow
+        set tries (tries + max-tries) ; ending
+      ]
+      [
+        set tries (tries + 1) ;updating the number of attempts
+        if tries >= max-tries
+        [
+          setxy 0 0 ;giving up and flying off
+        ]
+      ]
     ]
     [
-      set tries (tries + 1) ;updating the number of attempts
-      if tries >= max-tries
+      move-to one-of breeding-grounds with [ occupancy < occupancy-limit and habitat-attrac >= [ habitat-attrac ] of self ] ;looking further afield !!!!THIS MIGHT NEED TO BE REFINED - KEY ASSUMPTIONS OF KNOWLEDGE BEING MADE!!!! - MAY MEAN THAT THEY TRY REPEATEDLY AT THE SAME SPOT
+      ifelse random-float 1 < habitat-attrac
       [
-        setxy 0 0 ;giving up and flying off
+        est-burrow
+        set tries (tries + max-tries) ; ending
+      ]
+      [
+        set tries (tries + 1) ;updating the number of attempts
+        if tries >= max-tries
+        [
+          setxy 0 0 ;giving up and flying off
+        ]
       ]
     ]
   ] ;;put in an alternative for if the tries = 1 or greater
+end
+
+to est-burrow
+  
+  set occupancy (occupancy + 1)
+  set habitat-attrac (patch-occ * 0.3) + (hab-quality * 0.4) + (local-occ * 0.3) ;updating attractiveness
+  set breeding? true
+  set burrow patch-here
   
 end
 
 to find-mate ;a task solely for females
   
   let adult-females females with [ life-stage = "Adult" ]
+  
+  let old-pairs 0
   
   ask adult-females with [ not breeding? and mating-id >= 0] ;females who have a mate already
   [
@@ -145,17 +170,25 @@ to find-mate ;a task solely for females
     
     if [ breeding? ] of mate
     [
-      set                                                                                                                                                                                                                                                               breeding? true
+      set breeding? true
       set mating? true
-      ask mate
+      
+      ask mate ;asking the male to set mating to true too
       [
         set mating? true
       ]
+      
+      set old-pairs old-pairs + 1
     ]
-  ]
+  ] 
   
+  type "Previous pairs mating " show old-pairs ;showing how many previously paired birds are mating
   
-  ask adult-females with [ not breeding? and mate = nobody ] ;females who need to find a mate
+  let new-pairs 0
+  
+  if debug? [type "Unmated females " show count(adult-females with [ mating-id = -1 ])]
+  
+  ask adult-females with [ not breeding? and mating-id = -1 ] ;females who need to find a mate
   [
     if debug? [ show "Unmated female moving" ]
     let f-breeding-ground [ breeding-ground-id ] of self
@@ -166,9 +199,22 @@ to find-mate ;a task solely for females
       let tries 1
       while [ tries < max-tries and count ( free-males ) > 0 ]
       [
+        ifelse tries = 1
+        [
         move-to one-of breeding-grounds with [ count (males-here with [ mating-id = -1 ]) > 0 ] ;move to potential breeding ground
-       
-        if debug? [ show count (free-males) ]
+        ]
+        [
+         let alternatives neighbors with [ count (males-here with [ mating-id = -1 ]) > 0 and habitat-attrac > [ habitat-attrac ] of self ]
+         ifelse count (alternatives) > 0
+          [ 
+            move-to one-of alternatives ;move to potential breeding ground
+          ]
+          [
+            move-to one-of breeding-grounds with [ count (males-here with [ mating-id = -1 ]) > 0 ]
+          ]
+        ]
+        
+        if debug? [ type "free-males " show count (free-males) ]
        
         ifelse random-float 1 < habitat-attrac ;check if they want to move in
         [
@@ -181,18 +227,23 @@ to find-mate ;a task solely for females
             set mating-id [ who ] of f-mate
             set mating? true
           ]        
+          
           set breeding? true
           set mating? true
           set mate m-mate
           set mating-id [mating-id] of m-mate
-          set tries (tries + max-tries)
+          
+          set new-pairs new-pairs + 1 ;counter for number of newly formed pairs 
+          set tries (tries + max-tries) ;end the mate hunt
         ]
         [
-          set tries (tries + 1) ;updating the number of attempts if they didn't like that spot
+          set tries (tries + 1) ;updating the number of attempts if they didn't find a mate they liked
         ]
       ] 
     ]
   ]
+  
+  type "New pairs " show new-pairs ;showing how many newly formed pairs are mating
   
 end
 
@@ -212,8 +263,10 @@ to reproduce [ breeding-birds predation? ]
   [
     let total-mortality chick-predation + natural-chick-mortality
     let n-breed (random-binomial count(breeding-birds) (1 - total-mortality))  * random-normal 1 mortality-sd ;Factoring mortality, predation and noise into the hatch success
-    set n-breed round(min(list n-breed count(breeding-birds))) ;preventing cases where more are selected than exist
+    set n-breed round(min(list n-breed count(breeding-birds))) ;preventing cases where more are selected than exist    
     let successful-breeders n-of n-breed breeding-birds
+    
+    type "Predator hatching success" show (1 - total-mortality)
     
     type "Chicks fledged under predation:" show n-breed
     
@@ -223,9 +276,12 @@ to reproduce [ breeding-birds predation? ]
     ]
   ]
   [
-    let n-breed (random-binomial count(breeding-birds) (1 - natural-chick-mortality))  * random-normal 1 mortality-sd ;Factoring mortality, predation and noise into the hatch success
+    let n-breed (random-binomial count(breeding-birds) (1 - natural-chick-mortality))  * random-normal 1 mortality-sd ;Factoring mortality, predation and noise into the hatch success    
     set n-breed round(min(list n-breed count(breeding-birds))) ;preventing cases where more are selected than exist
     let successful-breeders n-of n-breed breeding-birds
+    
+    
+    type "Natural hatching success" show (1 -  natural-chick-mortality)
     
     type "Chicks fledged without predation:" show n-breed
     
@@ -257,9 +313,12 @@ end
 to mortality
   
   ;Adult natural mortality
-  let adults turtles with [ life-stage = "Adult" ]
+  let adults turtles with [ life-stage = "Adult" and not predators? ]
   let num-adults count adults
-  let adult-fatalities n-of ( random-binomial num-adults adult-mortality ) adults 
+  
+  let num-fatalities ( random-binomial num-adults adult-mortality )  * random-normal 1 mortality-sd
+  set num-fatalities round(min(list num-fatalities num-adults)) 
+  let adult-fatalities n-of num-fatalities adults
   
   ask adult-fatalities ;adult mortality
   [
@@ -275,7 +334,9 @@ to mortality
   let adults-at-risk turtles with [ life-stage = "Adult" and predators? ] 
   let adult-risk-count count adults-at-risk
   
-  let adult-killed n-of ( random-binomial adult-risk-count adult-predation ) adults-at-risk
+  let num-killed (random-binomial adult-risk-count (adult-mortality + adult-predation))  * random-normal 1 mortality-sd
+  set num-killed round(min(list num-killed adult-risk-count)) 
+  let adult-killed n-of num-killed adults-at-risk
   
   ask adult-killed;adult predation
   [
@@ -317,7 +378,7 @@ to census
 
 end
 
-;Moving birds off islands, resetting breeding andmating, then clearing burrow current occupancy 
+;Moving birds off islands, resetting breeding and mating, then clearing burrow current occupancy 
 to season-reset
   
   ask turtles
