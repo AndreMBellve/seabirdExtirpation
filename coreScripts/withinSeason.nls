@@ -266,9 +266,7 @@ to reproduce [ breeding-birds predation? ]
     set n-breed round(min(list n-breed count(breeding-birds))) ;preventing cases where more are selected than exist    
     let successful-breeders n-of n-breed breeding-birds
     
-    type "Predator hatching success" show (1 - total-mortality)
-    
-    type "Chicks fledged under predation:" show n-breed
+    if verbose? [ type "Chicks fledged under predation:" show n-breed ] 
     
     ask successful-breeders
     [
@@ -279,11 +277,8 @@ to reproduce [ breeding-birds predation? ]
     let n-breed (random-binomial count(breeding-birds) (1 - natural-chick-mortality))  * random-normal 1 mortality-sd ;Factoring mortality, predation and noise into the hatch success    
     set n-breed round(min(list n-breed count(breeding-birds))) ;preventing cases where more are selected than exist
     let successful-breeders n-of n-breed breeding-birds
-    
-    
-    type "Natural hatching success" show (1 -  natural-chick-mortality)
-    
-    type "Chicks fledged without predation:" show n-breed
+      
+    if verbose? [ type "Chicks fledged without predation:" show n-breed ]
     
     ask successful-breeders
     [

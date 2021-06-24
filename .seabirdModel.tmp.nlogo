@@ -817,11 +817,11 @@ NIL
 1
 
 MONITOR
-1530
+1525
+165
+1747
 210
-1675
-255
-Immigrants to predator site
+Number of immigrants to predator site
 count turtles with [ [ predators? ] of burrow = true and breeding-ground-id = natal-ground-id ]
 0
 1
