@@ -256,7 +256,7 @@ to assign-mates
             ]
             
             set mate f-mate
-            set mating? true 
+            set mating-id [ who ] of f-mate 
           ]
         ]
       ]
