@@ -182,7 +182,10 @@ to find-mate ;a task solely for females
     ]
   ] 
   
-  type "Previous pairs mating " show old-pairs ;showing how many previously paired birds are mating
+  if verbose? 
+  [
+    type "Previous pairs mating " show old-pairs ;showing how many previously paired birds are mating
+  ]
   
   let new-pairs 0
   
@@ -243,7 +246,10 @@ to find-mate ;a task solely for females
     ]
   ]
   
-  type "New pairs " show new-pairs ;showing how many newly formed pairs are mating
+  if verbose? 
+  [
+    type "New pairs " show new-pairs ;showing how many newly formed pairs are mating
+  ]
   
 end
 

@@ -360,7 +360,7 @@ chick-predation
 chick-predation
 0
 1
-0.52
+0.67
 0.01
 1
 NIL
@@ -390,7 +390,7 @@ juvenile-mortality
 juvenile-mortality
 0
 1
-0.6
+0.79
 0.01
 1
 NIL
@@ -420,7 +420,7 @@ adult-predation
 adult-predation
 0
 1
-0.03
+0.05
 0.01
 1
 NIL
@@ -517,8 +517,8 @@ true
 true
 "" ""
 PENS
-"Males" 1.0 0 -13791810 true "" "plot (count males with [ life-stage = \"Adult\" and breeding? and mating-id > -1]) / count males with [ life-stage = \"Adult\" ]"
-"Females" 1.0 0 -1664597 true "" "plot (count females with [ life-stage = \"Adult\" and breeding? and mating-id > -1]) / count females with [ life-stage = \"Adult\" ]"
+"Males" 1.0 0 -13791810 true "" "plot (count males with [ life-stage = \"Adult\" and breeding? and mating-id > -1]) / (count males with [ life-stage = \"Adult\" ])"
+"Females" 1.0 0 -1664597 true "" "plot (count females with [ life-stage = \"Adult\" and breeding? and mating-id > -1]) / (count females with [ life-stage = \"Adult\" ])"
 
 PLOT
 1045
@@ -601,7 +601,7 @@ SWITCH
 43
 debug?
 debug?
-1
+0
 1
 -1000
 

@@ -309,7 +309,7 @@ to raise-chick [ colour ]
   
   set size 3
   set shape "bird side"
-  set age 0
+  set age random age-at-first-breeding
   set settled? false
   set breeding? false
   set mating? false
