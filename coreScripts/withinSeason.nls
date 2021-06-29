@@ -24,6 +24,23 @@ to recruit
   
 end
 
+to emigrate ;Currently kills off birds once they have reached the threshold for number of unsuccessful breeding attempts.
+  
+  ;Calculating the number of emigrants based on a binomial distribution
+  let pot-emigrants breeders with [ time-since-breed >= emigration-timer ]
+  let n-emigrants count pot-emigrants
+  let emigrants n-of (random-binomial n-emigrants emigration-rate) pot-emigrants
+  
+  if verbose? [ type "Number of emigrants" show count emigrants ]
+  
+  ask emigrants
+  [
+    widow
+    die
+  ]
+  
+end  
+
 to philopatry-check
 
   let male-birds males with [ settled? = false and life-stage = "Adult" ]
@@ -158,93 +175,35 @@ end
 
 to find-mate ;a task solely for females
   
+  
   let adult-females females with [ life-stage = "Adult" ]
   
-  let old-pairs 0
+  ;Old pairings
   
-  ask adult-females with [ not breeding? and mating-id >= 0] ;females who have a mate already
+  if debug? [type "Mated females " show count(adult-females with [ mating-id >= 0 ])]
+
+  set old-pairs 0
+  
+  ask adult-females with [ not breeding? and mating-id >= 0] ;females who already have a mate 
   [
-      if debug? [ show "Mated female moving" ]
-    
-    move-to mate ;move straight to their mate
-    
-    if [ breeding? ] of mate
-    [
-      set breeding? true
-      set mating? true
-      
-      ask mate ;asking the male to set mating to true too
-      [
-        set mating? true
-      ]
-      
-      set old-pairs old-pairs + 1
-    ]
+    if debug? [ show "Mated female moving" ]
+    reunite ;Finding mate from a previous pairing
   ] 
+
   
-  if verbose? 
-  [
-    type "Previous pairs mating " show old-pairs ;showing how many previously paired birds are mating
-  ]
+
   
-  let new-pairs 0
-  
+  ;New pairs
   if debug? [type "Unmated females " show count(adult-females with [ mating-id = -1 ])]
+  
+  set new-pairs 0 ;counter for new mates
   
   ask adult-females with [ not breeding? and mating-id = -1 ] ;females who need to find a mate
   [
-    if debug? [ show "Unmated female moving" ]
-    let f-breeding-ground [ breeding-ground-id ] of self
-    let free-males males with [ mating-id = -1 and breeding? and breeding-ground-id = f-breeding-ground ] 
-    
-    if count free-males > 0 ;checking there are potential males
-    [
-      let tries 1
-      while [ tries < max-tries and count ( free-males ) > 0 ]
-      [
-        ifelse tries = 1
-        [
-        move-to one-of breeding-grounds with [ count (males-here with [ mating-id = -1 ]) > 0 ] ;move to potential breeding ground
-        ]
-        [
-         let alternatives neighbors with [ count (males-here with [ mating-id = -1 ]) > 0 and habitat-attrac > [ habitat-attrac ] of self ]
-         ifelse count (alternatives) > 0
-          [ 
-            move-to one-of alternatives ;move to potential breeding ground
-          ]
-          [
-            move-to one-of breeding-grounds with [ count (males-here with [ mating-id = -1 ]) > 0 ]
-          ]
-        ]
-        
-        if debug? [ type "free-males " show count (free-males) ]
-       
-        ifelse random-float 1 < habitat-attrac ;check if they want to move in
-        [
-          let f-mate self
-          let m-mate one-of (males-on patch-here) with [mating-id = -1]
-          
-          ask m-mate
-          [
-            set mate f-mate
-            set mating-id [ who ] of f-mate
-            set mating? true
-          ]        
-          
-          set breeding? true
-          set mating? true
-          set mate m-mate
-          set mating-id [mating-id] of m-mate
-          
-          set new-pairs new-pairs + 1 ;counter for number of newly formed pairs 
-          set tries (tries + max-tries) ;end the mate hunt
-        ]
-        [
-          set tries (tries + 1) ;updating the number of attempts if they didn't find a mate they liked
-        ]
-      ] 
-    ]
+      if debug? [ show "Unmated female moving" ] ;isolating individuals
+      pair
   ]
+
   
   if verbose? 
   [
@@ -252,6 +211,82 @@ to find-mate ;a task solely for females
   ]
   
 end
+
+to reunite
+
+  move-to mate ;move straight to their mate
+  
+  if [ breeding? ] of mate
+  [
+    set breeding? true
+    set mating? true
+    
+    ask mate ;asking the male to set mating to true too
+    [
+      set mating? true
+    ]
+    
+    set old-pairs old-pairs + 1
+  ]
+  
+end
+
+to pair
+  
+  let f-breeding-ground [ breeding-ground-id ] of self
+  let free-males males with [ mating-id = -1 and breeding? and breeding-ground-id = f-breeding-ground ] 
+  
+  if any? free-males ;checking there are potential males
+  [
+    let potential-mates breeding-grounds with [ count (males-here with [ mating-id = -1 ]) > 0 ] 
+    let tries 1
+    while [ tries < max-tries and any? free-males ]
+    [
+      ifelse tries = 1
+      [
+        move-to one-of potential-mates 
+      ]
+      [
+        let alternatives neighbors with [ count (males-here with [ mating-id = -1 ]) > 0 and habitat-attrac > [ habitat-attrac ] of self ]
+        ifelse count (alternatives) > 0
+          [ 
+            move-to one-of alternatives ;move to potential breeding ground
+        ]
+        [
+          move-to one-of potential-mates
+        ]
+      ]
+      
+      if debug? [ type "free-males " show count (free-males) ]
+      
+      ifelse random-float 1 < habitat-attrac ;check if they want to move in
+      [
+        let f-mate self
+        let m-mate one-of (males-on patch-here) with [mating-id = -1]
+        
+        ask m-mate
+        [
+          set mate f-mate
+          set mating-id [ who ] of f-mate
+          set mating? true
+        ]        
+        
+        set breeding? true
+        set mating? true
+        set mate m-mate
+        set mating-id [mating-id] of m-mate
+        
+        set new-pairs new-pairs + 1 ;counter for number of newly formed pairs 
+        
+        set tries (tries + max-tries) ;end the mate hunt
+      ]
+      [
+        set tries (tries + 1) ;updating the number of attempts if they didn't find a mate they liked
+      ]
+    ] 
+  ]
+end
+
 
 to fledging ;need to ask one in each pair to hatch....
   
@@ -276,6 +311,7 @@ to reproduce [ breeding-birds predation? ]
     
     ask successful-breeders
     [
+      set time-since-breed 0
       hatch-chick
     ]
   ]
@@ -288,6 +324,7 @@ to reproduce [ breeding-birds predation? ]
     
     ask successful-breeders
     [
+      set time-since-breed 0
       hatch-chick
     ]
   ]      
@@ -382,6 +419,16 @@ end
 ;Moving birds off islands, resetting breeding and mating, then clearing burrow current occupancy 
 to season-reset
   
+  ;updating island attractiveness
+  
+  
+  ;updating counter as these birds may move on in future seasons
+  ask breeders
+  [
+    set time-since-breed time-since-breed + 1
+  ]
+  
+  ;resetting
   ask turtles
   [
     setxy 0 0
