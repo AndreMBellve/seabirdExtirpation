@@ -28,6 +28,9 @@ globals
   new-recruits
 
   pop-size
+
+  old-pairs
+  new-pairs
 ]
 
 patches-own
@@ -43,10 +46,9 @@ patches-own
   neighbourhood ;agentset of all patches
   maxK
 
+  isl-attrac
+
   predators? ;whether there are predators in this patch
-
-
-
 
   low-k             ;; capacity and
   low-value-resource  ;; current level of low value resource
@@ -70,7 +72,7 @@ turtles-own
   mating-id ;identifier for mating pairs
   mate ;agent-set containing mate
   burrow ;a single patch that this bird last bred at. Males only.
-
+  time-since-breed ;counter for how long it has been since the bird has bred.
 
   last-breeding-success? ;T/F indicating whether their last breeding attempt was successful or unsuccessful
 
@@ -118,33 +120,34 @@ to go
 end
 
 to step
-      show "Recruitment"
-    recruit ;adding new individuals
+  show "Recruitment"
+  recruit ;adding new individuals
 
-    show "Philopatry check"
-    philopatry-check ;checking if new recruits are natal ground bound
+  show "Philopatry check"
+  philopatry-check ;checking if new recruits are natal ground bound
 
-    ;x time steps potential island change or leave the world
+  show "Emigration"
+  emigrate
 
-    show "Mating"
-    find-burrow ;male only
-    find-mate ;female only
+  show "Mating"
+  find-burrow ;male only
+  find-mate ;female only
 
-    show "Fledging"
-    fledging
+  show "Fledging"
+  fledging
 
-    show "Adult Death"
-    mortality
+  show "Adult Death"
+  mortality
 
-    ;census
-    ;let data (list count turtles count males count )
+  ;census
+  ;let data (list count turtles count males count )
 
-    show "New Year"
-    season-reset
+  show "New Year"
+  season-reset
 
-    ;set pop-size lput data pop-size
+  ;set pop-size lput data pop-size
 
-    tick
+  tick
 end
 
 
@@ -181,17 +184,17 @@ GRAPHICS-WINDOW
 100
 0
 100
-1
-1
+0
+0
 1
 ticks
 30.0
 
 SLIDER
-22
-170
-194
-203
+20
+140
+192
+173
 starting-seabird-pop
 starting-seabird-pop
 0
@@ -252,10 +255,10 @@ NIL
 HORIZONTAL
 
 SLIDER
-253
-139
-425
-172
+255
+135
+427
+168
 clust-area
 clust-area
 0
@@ -442,10 +445,10 @@ NIL
 HORIZONTAL
 
 SLIDER
-26
-87
-198
-120
+21
+97
+193
+130
 starting-juveniles
 starting-juveniles
 0
@@ -517,8 +520,8 @@ true
 true
 "" ""
 PENS
-"Males" 1.0 0 -13791810 true "" "plot (count males with [ life-stage = \"Adult\" and breeding? and mating-id > -1]) / (count males with [ life-stage = \"Adult\" ])"
-"Females" 1.0 0 -1664597 true "" "plot (count females with [ life-stage = \"Adult\" and breeding? and mating-id > -1]) / (count females with [ life-stage = \"Adult\" ])"
+"Males" 1.0 0 -13791810 true "" "plot (count males with [ life-stage = \"Adult\" and mating?]) / (count males with [ life-stage = \"Adult\" ])"
+"Females" 1.0 0 -1664597 true "" "plot (count females with [ life-stage = \"Adult\" and mating?]) / (count females with [ life-stage = \"Adult\" ])"
 
 PLOT
 1045
@@ -601,7 +604,7 @@ SWITCH
 43
 debug?
 debug?
-0
+1
 1
 -1000
 
@@ -648,17 +651,17 @@ max-age
 max-age
 0
 100
-39.0
+34.0
 1
 1
 NIL
 HORIZONTAL
 
 PLOT
-1510
-340
-1710
-490
+1505
+275
+1810
+415
 Age histogram
 Age
 Frequency
@@ -795,7 +798,7 @@ SWITCH
 83
 verbose?
 verbose?
-1
+0
 1
 -1000
 
@@ -817,26 +820,67 @@ NIL
 1
 
 MONITOR
-1530
-210
-1675
-255
-Immigrants to predator site
+1720
+45
+1882
+90
+Immigrants in predator site
 count turtles with [ [ predators? ] of burrow = true and breeding-ground-id = natal-ground-id ]
 0
 1
 11
 
 MONITOR
-1535
-255
-1672
-300
-Immigrants to safe site
+1735
+90
+1872
+135
+Immigrants in safe site
 count turtles with [ [ predators? ] of burrow = false and breeding-ground-id = natal-ground-id ]
 0
 1
 11
+
+MONITOR
+1550
+150
+1647
+195
+Seabird counter
+count turtles
+0
+1
+11
+
+SLIDER
+25
+670
+197
+703
+emigration-timer
+emigration-timer
+0
+10
+6.0
+1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+25
+710
+197
+743
+emigration-rate
+emigration-rate
+0
+1
+0.4
+0.01
+1
+NIL
+HORIZONTAL
 
 @#$#@#$#@
 ## WHAT IS IT?
