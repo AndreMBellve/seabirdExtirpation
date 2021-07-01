@@ -43,7 +43,7 @@ to grow-islands ;creating islands and colonies
   ;Setting some conviences names
   set colonies patches with [ colony-id > 0 ] ;the baseline initialisation for cells is 0 (i.e. sea cells are 0)
   set the-islands patches with [ habitable? ] ;convenience name
-  set island-id sort remove-duplicates [colony-id] of the-islands
+  set island-id remove-duplicates [colony-id] of the-islands
   set the-sea patches with [ not habitable? ]
  
   ;Creating my predator islands
@@ -54,13 +54,10 @@ to grow-islands ;creating islands and colonies
   set pred-islands patches with [ predators? ]
   set safe-islands patches with [ habitable? = true and not predators? ]
   
-  set colonies []
   ;Creating 
   foreach island-id [n -> 
     dig-burrows n
-    set colonies lput (patches with [colony-id = n]) colonies
-  ] 
-  
+  ]
   
   ask patches with [ habitable? ]
   [
@@ -173,7 +170,7 @@ to init-adults
     set mating? false ;Has not found a mate
     set mating-id -1
     set last-breeding-success? true
-    set size 1
+    set size 2
     set life-stage "Adult"
     set mate no-turtles
     set burrow no-patches
@@ -311,7 +308,7 @@ to raise-chick [ colour ]
   
   set color colour
   
-  set size 1
+  set size 3
   set shape "bird side"
   set age random age-at-first-breeding
   set settled? false

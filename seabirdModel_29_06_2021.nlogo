@@ -1,7 +1,6 @@
 extensions
 [
   rnd
-  profiler
   ;nlrx
 ]
 
@@ -121,9 +120,6 @@ to go
 end
 
 to step
-
-  if profiler? [ profiler:start ]
-
   show "Recruitment"
   recruit ;adding new individuals
 
@@ -152,13 +148,6 @@ to step
   ;set pop-size lput data pop-size
 
   tick
-
-  if profiler?
-  [
-    profiler:stop          ;; stop profiling
-    print profiler:report  ;; view the results
-    profiler:reset         ;; clear the data
-  ]
 end
 
 
@@ -202,10 +191,10 @@ ticks
 30.0
 
 SLIDER
-25
-175
-197
-208
+20
+140
+192
+173
 starting-seabird-pop
 starting-seabird-pop
 0
@@ -456,10 +445,10 @@ NIL
 HORIZONTAL
 
 SLIDER
-26
-132
-198
-165
+21
+97
+193
+130
 starting-juveniles
 starting-juveniles
 0
@@ -809,7 +798,7 @@ SWITCH
 83
 verbose?
 verbose?
-1
+0
 1
 -1000
 
@@ -892,17 +881,6 @@ emigration-rate
 1
 NIL
 HORIZONTAL
-
-SWITCH
-0
-90
-103
-123
-profiler?
-profiler?
-1
-1
--1000
 
 @#$#@#$#@
 ## WHAT IS IT?
