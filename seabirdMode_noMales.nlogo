@@ -19,16 +19,31 @@ globals
   the-shore
 
   island-id
-  colonies
+  colonies ;;list of patchsets for each island
+
 
   pred-islands
   safe-islands
 
+  isl-attract ;;weighting for philopatry
+
+  lekking-males ;;list of colony patch-sets that contain the patches with male-count > 0
   breeders
   recruits
   new-recruits
 
-  pop-size
+  isl-occ ;;the number of breeding bird on each island
+  world-occ ;;the number of breeding birds in the world (adult breeders only)
+
+  ; set demog lput (list a b c) demog
+  adult-pop ;;the total number of adults
+  juv-pop ;;the total number ofjuveniles
+  pop-size ;;Total population
+
+  demography-series
+  demography-year
+  island-series
+  island-year
 
   old-pairs
   new-pairs
@@ -37,19 +52,18 @@ globals
 patches-own
 [
 
-  habitable? ;whether this is a habitable patch (T/F)
-  suitable? ;classifier for whether the patches are particularly suitable for burrows
-  colony-id ;which colony this belongs too
+  habitable? ;;whether this is a habitable patch (T/F)
+  suitable? ;;classifier for whether the patches are particularly suitable for burrows
+  colony-id ;;which colony this belongs too
 
-  habitat-attrac ;the attractiveness of the patch
-  occupancy ;the number of birds in this patch
-  occupancy-limit ;the maximum number of birds the patch can have
-  neighbourhood ;agentset of all patches
+  habitat-attrac ;;the attractiveness of the patch
+  occupancy ;;the number of birds in this patch
+  occupancy-limit ;;the maximum number of birds the patch can have
+  male-count ;;number of males in burrows
+  neighbourhood ;;agentset of all patches
   maxK
 
-  isl-attrac
-
-  predators? ;whether there are predators in this patch
+  predators? ;;whether there are predators in this patch
 
   low-k             ;; capacity and
   low-value-resource  ;; current level of low value resource
@@ -62,20 +76,20 @@ patches-own
 turtles-own
 [
 
-  breeding-grounds ;patchset of breeding grounds
-  breeding-ground-id ;The location of their breeding ground
-  natal-ground-id ;What island they were born on
-  burrow ;a single patch that this bird last bred at - surrogate for mate with no males present
+  breeding-grounds ;;patchset of breeding grounds
+  breeding-ground-id ;;The location of their breeding ground
+  natal-ground-id ;;What island they were born on
+  burrow ;;a single patch that this bird last bred at - surrogate for mate with no males present
 
-  settled? ;Whether or not this bird has chosen a breeding ground (happens only once)
-  breeding? ;Whether or not it has found a patch within the colony (reset yearly)
-  mating? ;Whether or not a bird has successfully established a burrow with a 'male'
+  settled? ;;Whether or not this bird has chosen a breeding ground (happens only once)
+  breeding? ;;Whether or not it has found a patch within the colony (reset yearly)
+  mating? ;;Whether or not a bird has successfully established a burrow with a 'male'
 
-  age ;numeric counting the age of individuals
-  life-stage ;Juvenile/Adults
-  time-since-breed ;counter for how long it has been since the bird has bred.
+  age ;;numeric counting the age of individuals
+  life-stage ;;Juvenile/Adults
+  time-since-breed ;;counter for how long it has been since the bird has bred.
 
-  last-breeding-success? ;T/F indicating whether their last breeding attempt was successful or unsuccessful
+  last-breeding-success? ;;T/F indicating whether their last breeding attempt was successful or unsuccessful
 
 ]
 
@@ -95,7 +109,6 @@ to setup
 
   init-adults
   assign-colonies
-  assign-mates
   assign-burrows
 
   init-juveniles
@@ -119,31 +132,39 @@ to step
 
   if profiler? [ profiler:start ]
 
+  ;;Clearing yearly list
+  set demography-year []
+
   show "Recruitment"
-  recruit ;adding new individuals
+  recruit ;;adding new individuals
+  ;; set deomg-yr lput x demog-yr
 
   show "Philopatry check"
-  philopatry-check ;checking if new recruits are natal ground bound
+  philopatry-check ;;checking if new recruits are natal ground bound
 
   show "Emigration"
-  emigrate
+  emigrate ;;potentially abandoning patches
+
+  show "Burrowing"
+  burrowing ;;males spread across patches (multi-nomial draw)
 
   show "Mating"
-  find-mate ;female only
+  find-mate ;;females find a 'male' and settle down in a patch
 
-  show "Fledging"
-  fledging
+  show "Hatching-Fledging"
+  hatching-fledging ;;this stage includes chick mortality - To do: create data output list for each island
 
   show "Adult Death"
-  mortality
+  mortality ;;
 
-  ;census
-  ;let data (list count turtles count males count )
+  show "Census"
+  census
+  ;;let data (list count turtles count males count )
 
   show "New Year"
   season-reset
 
-  ;set pop-size lput data pop-size
+  ;;set demog-series lput demog-yr demog-series
 
   tick
 
@@ -155,9 +176,6 @@ to step
   ]
 end
 
-to-report isl-attract
-
-end
 
 to-report patch-occ
   report [ occupancy ] of patch-here / [ maxK ] of patch-here
@@ -170,6 +188,14 @@ end
 to-report local-occ
   report (mean[ occupancy ] of neighbourhood) / [ maxK ] of patch-here
 end
+
+
+
+;;; To be added:
+;; Island attractiveness
+;; Data recording - bugs to be worked out...
+;; Better island shapes
+;; Bumping them off the edge
 @#$#@#$#@
 GRAPHICS-WINDOW
 521
@@ -192,17 +218,17 @@ GRAPHICS-WINDOW
 100
 0
 100
-0
-0
+1
+1
 1
 ticks
 30.0
 
 SLIDER
-25
-175
-197
-208
+30
+205
+202
+238
 starting-seabird-pop
 starting-seabird-pop
 0
@@ -248,10 +274,10 @@ NIL
 1
 
 SLIDER
-253
-88
-425
-121
+235
+135
+407
+168
 num-clust
 num-clust
 0
@@ -263,25 +289,25 @@ NIL
 HORIZONTAL
 
 SLIDER
-255
-135
-427
-168
+237
+182
+409
+215
 clust-area
 clust-area
 0
 20
-18.0
+6.0
 1
 1
 NIL
 HORIZONTAL
 
 SLIDER
-254
-189
-426
-222
+236
+236
+408
+269
 clust-density
 clust-density
 0
@@ -293,110 +319,110 @@ NIL
 HORIZONTAL
 
 SLIDER
-22
-338
-194
-371
-philopatry
-philopatry
+27
+368
+199
+401
+female-philopatry
+female-philopatry
 0
 1
-0.85
+0.96
 0.01
 1
 NIL
 HORIZONTAL
 
 SLIDER
-23
-220
-195
-253
+28
+250
+200
+283
 sex-ratio
 sex-ratio
 0
 1
-0.59
+0.5
 0.01
 1
 NIL
 HORIZONTAL
 
 TEXTBOX
-37
-253
-187
-281
+42
+283
+192
+311
 Higher value will skew towards males\n
 11
 0.0
 1
 
 SLIDER
-255
-230
-427
-263
+237
+277
+409
+310
 low-lambda
 low-lambda
 0
 200
-0.0
+5.0
 1
 1
 NIL
 HORIZONTAL
 
 SLIDER
-22
-425
-197
-458
+27
+455
+202
+488
 chick-predation
 chick-predation
 0
 1
-0.67
+0.43
 0.01
 1
 NIL
 HORIZONTAL
 
 SLIDER
-22
-545
-197
-578
+27
+575
+202
+608
 adult-mortality
 adult-mortality
 0
 1
-0.06
+0.04
 0.01
 1
 NIL
 HORIZONTAL
 
 SLIDER
-22
-505
-197
-538
+27
+535
+202
+568
 juvenile-mortality
 juvenile-mortality
 0
 1
-0.79
+0.64
 0.01
 1
 NIL
 HORIZONTAL
 
 SLIDER
-22
-465
-199
-498
+27
+495
+204
+528
 natural-chick-mortality
 natural-chick-mortality
 0
@@ -408,10 +434,10 @@ NIL
 HORIZONTAL
 
 SLIDER
-22
-585
-197
-618
+27
+615
+202
+648
 adult-predation
 adult-predation
 0
@@ -423,10 +449,10 @@ NIL
 HORIZONTAL
 
 SLIDER
-254
-301
-426
-334
+236
+348
+408
+381
 num-predator-islands
 num-predator-islands
 0
@@ -438,60 +464,60 @@ NIL
 HORIZONTAL
 
 SLIDER
-26
-132
-198
-165
+31
+162
+203
+195
 starting-juveniles
 starting-juveniles
 0
 500
-156.0
+100.0
 1
 1
 NIL
 HORIZONTAL
 
 SLIDER
-254
-343
-426
-376
+236
+390
+408
+423
 age-at-first-breeding
 age-at-first-breeding
 0
 12
-12.0
+6.0
 1
 1
 NIL
 HORIZONTAL
 
 SLIDER
-254
-386
-426
-419
+236
+433
+408
+466
 age-first-return
 age-first-return
 0
 10
-10.0
+6.0
 1
 1
 NIL
 HORIZONTAL
 
 SLIDER
-255
-475
-427
-508
+237
+522
+409
+555
 max-tries
 max-tries
 1
 10
-10.0
+6.0
 1
 1
 NIL
@@ -504,7 +530,7 @@ PLOT
 740
 Proportion mating
 Ticks
-Proportion of pairs
+Proportion of Adults Mating
 0.0
 1.0
 0.0
@@ -513,8 +539,7 @@ true
 true
 "" ""
 PENS
-"Males" 1.0 0 -13791810 true "" "plot (count males with [ life-stage = \"Adult\" and mating?]) / (count males with [ life-stage = \"Adult\" ])"
-"Females" 1.0 0 -1664597 true "" "plot (count females with [ life-stage = \"Adult\" and mating?]) / (count females with [ life-stage = \"Adult\" ])"
+"Females" 1.0 0 -1664597 true "" "plot ((count turtles with [ life-stage = \"Adult\" and mating?]) / (count turtles with [ life-stage = \"Adult\" ]))"
 
 PLOT
 1045
@@ -532,9 +557,7 @@ true
 true
 "" ""
 PENS
-"Adult males" 1.0 0 -14730904 true "" "plot count males with [ life-stage = \"Adult\" ]"
 "Adult females" 1.0 0 -7858858 true "" "plot count females with [ life-stage = \"Adult\" ]"
-"Juvenile males" 1.0 0 -8020277 true "" "plot count males with [ life-stage = \"Juvenile\" ]"
 "Juvenile females" 1.0 0 -3508570 true "" "plot count females with [ life-stage = \"Juvenile\" ]"
 
 PLOT
@@ -553,8 +576,6 @@ true
 true
 "" ""
 PENS
-"Male" 1.0 0 -4528153 true "" "plot count males with [ age = 0 ]"
-"Female" 1.0 0 -865067 true "" "plot count females with [ age = 0 ]"
 "Total" 1.0 0 -16777216 true "" "plot count turtles with [ age = 0 ]"
 
 MONITOR
@@ -579,17 +600,6 @@ count females with [ breeding? ]
 1
 11
 
-MONITOR
-1495
-95
-1587
-140
-Breeding Males
-count males with [ breeding? ]
-0
-1
-11
-
 SWITCH
 0
 10
@@ -602,15 +612,15 @@ debug?
 -1000
 
 SLIDER
-255
-430
-427
-463
+237
+477
+409
+510
 nhb-rad
 nhb-rad
 1
 5
-5.0
+1.0
 1
 1
 NIL
@@ -636,15 +646,15 @@ PENS
 "Predator adults" 1.0 0 -8053223 true "" "plot count turtles with [ life-stage = \"Adult\" and [ predators? ] of burrow = true ]"
 
 SLIDER
-255
-520
-427
-553
+237
+567
+409
+600
 max-age
 max-age
 0
 100
-26.0
+24.0
 1
 1
 NIL
@@ -669,10 +679,10 @@ PENS
 "default" 1.0 1 -16777216 true "" "histogram [age] of turtles"
 
 SLIDER
-22
-625
-197
-658
+27
+655
+202
+688
 old-mortality
 old-mortality
 0
@@ -684,10 +694,10 @@ NIL
 HORIZONTAL
 
 SLIDER
-20
-380
-195
-413
+25
+410
+200
+443
 prop-returning-breeders
 prop-returning-breeders
 0
@@ -698,22 +708,11 @@ prop-returning-breeders
 NIL
 HORIZONTAL
 
-MONITOR
-1610
-95
-1692
-140
-Mating Males
-count males with [ mating? ]
-0
-1
-11
-
 SLIDER
-255
-565
-427
-598
+237
+612
+409
+645
 mortality-sd
 mortality-sd
 0
@@ -725,55 +724,55 @@ NIL
 HORIZONTAL
 
 SLIDER
-255
-610
-427
-643
+237
+657
+409
+690
 prop-suitable
 prop-suitable
 0
 1
-0.42
+0.48
 0.01
 1
 NIL
 HORIZONTAL
 
 SLIDER
-255
-650
-427
-683
+237
+697
+409
+730
 habitat-aggregation
 habitat-aggregation
 0
 1
-0.08
+0.18
 0.01
 1
 NIL
 HORIZONTAL
 
 SLIDER
-255
-265
-427
-298
+237
+312
+409
+345
 high-lambda
 high-lambda
 0
 100
-69.0
+68.0
 1
 1
 NIL
 HORIZONTAL
 
 SLIDER
-255
-690
-427
-723
+237
+737
+409
+770
 diffusion-prop
 diffusion-prop
 0
@@ -818,7 +817,7 @@ MONITOR
 1882
 90
 Immigrants in predator site
-count turtles with [ [ predators? ] of burrow = true and breeding-ground-id = natal-ground-id ]
+;count turtles with [ [ predators? ] of burrow = true and breeding-ground-id = natal-ground-id ]
 0
 1
 11
@@ -829,16 +828,16 @@ MONITOR
 1872
 135
 Immigrants in safe site
-count turtles with [ [ predators? ] of burrow = false and breeding-ground-id = natal-ground-id ]
+;count turtles with [ [ predators? ] of burrow = false and breeding-ground-id = natal-ground-id ]
 0
 1
 11
 
 MONITOR
 1550
-150
+95
 1647
-195
+140
 Seabird counter
 count turtles
 0
@@ -846,30 +845,30 @@ count turtles
 11
 
 SLIDER
-25
-670
-197
-703
+30
+700
+202
+733
 emigration-timer
 emigration-timer
 0
 10
-6.0
+2.0
 1
 1
 NIL
 HORIZONTAL
 
 SLIDER
-25
-710
-197
-743
+30
+740
+202
+773
 emigration-rate
 emigration-rate
 0
 1
-0.4
+0.8
 0.01
 1
 NIL
@@ -882,9 +881,200 @@ SWITCH
 123
 profiler?
 profiler?
+1
+1
+-1000
+
+SLIDER
+30
+315
+202
+348
+vagrancy
+vagrancy
+0
+0.1
+0.01
+0.01
+1
+NIL
+HORIZONTAL
+
+SWITCH
+0
+125
+120
+158
+capture-data?
+capture-data?
+1
+1
+-1000
+
+SLIDER
+230
+85
+402
+118
+time-to-prospect
+time-to-prospect
+0
+10
+3.0
+1
+1
+NIL
+HORIZONTAL
+
+SWITCH
+420
+615
+557
+648
+update-colour?
+update-colour?
+1
+1
+-1000
+
+SLIDER
+430
+745
+602
+778
+collapse-half-way
+collapse-half-way
+0
+200
+101.0
+1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+430
+785
+602
+818
+collapse-perc
+collapse-perc
+0
+1
+0.1
+0.01
+1
+NIL
+HORIZONTAL
+
+SLIDER
+610
+745
+782
+778
+raft-half-way
+raft-half-way
+0
+500
+200.0
+1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+610
+785
+782
+818
+emigrant-perc
+emigrant-perc
+0
+1
+0.8
+0.01
+1
+NIL
+HORIZONTAL
+
+SWITCH
+425
+655
+527
+688
+collapse?
+collapse?
 0
 1
 -1000
+
+SLIDER
+430
+825
+602
+858
+collapse-curve
+collapse-curve
+0
+2
+2.0
+0.5
+1
+NIL
+HORIZONTAL
+
+SLIDER
+610
+825
+782
+858
+emigration-curve
+emigration-curve
+0
+2
+1.0
+0.5
+1
+NIL
+HORIZONTAL
+
+SWITCH
+425
+695
+532
+728
+prospect?
+prospect?
+0
+1
+-1000
+
+BUTTON
+400
+35
+497
+68
+NIL
+set-defaults
+NIL
+1
+T
+OBSERVER
+NIL
+NIL
+NIL
+NIL
+1
+
+CHOOSER
+1560
+490
+1698
+535
+isl-att-curve
+isl-att-curve
+"uniform" "linear" "sigmoid" "normal"
+0
 
 @#$#@#$#@
 ## WHAT IS IT?

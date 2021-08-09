@@ -1,8 +1,16 @@
 to recruit
   
   set new-recruits turtles with [ life-stage = "Juvenile" and age = 0]
+  let unfortunate-recruits random-binomial count(new-recruits) juvenile-mortality
   
-  ask n-of (random-binomial count(new-recruits) juvenile-mortality) new-recruits
+  ;;capturing data
+  if capture-data?
+  [
+    set demography-year lput count(new-recruits) demography-year
+    set demography-year lput unfortunate-recruits demography-year
+  ]
+  
+  ask n-of unfortunate-recruits new-recruits
   [
     die
   ]
@@ -24,21 +32,6 @@ to recruit
   
 end
 
-to emigrate ;Currently kills off birds once they have reached the threshold for number of unsuccessful breeding attempts.
-  
-  ;Calculating the number of emigrants based on a binomial distribution
-  let pot-emigrants breeders with [ time-since-breed >= emigration-timer ]
-  let n-emigrants count pot-emigrants
-  let emigrants n-of (random-binomial n-emigrants emigration-rate) pot-emigrants
-  
-  if verbose? [ type "Number of emigrants" show count emigrants ]
-  
-  ask emigrants
-  [
-    die
-  ]
-  
-end  
 
 to philopatry-check
    
@@ -46,14 +39,20 @@ to philopatry-check
   if verbose? [ type "New female recruits:" show count(female-recruits) ]
   choose-colony female-recruits female-philopatry
 
+  ;;capturing data
+  if capture-data?
+  [
+    set demography-year lput count(female-recruits) demography-year  ;; To be updated to divided this by year
+  ]
 end
 
-
-to choose-colony [ birds philopatry ] ;an agentset of birds who need to choose a colony and the philopatry for that sex
- 
+;; COLONY CHOICE TO BE OVERHAULED - choice weighting by island attractiveness and potentially have a new group for immigrants who are unable to breed in x consecutive years
+to choose-colony [ birds philopatry ] ;;an agentset of birds who need to choose a colony and the philopatry for that sex
+  
   ask birds
   [
-    ifelse (random-float 1 < philopatry)
+    ;; let target-isl multinomial-int 1 isl-attract true ;; how to convert this into a an island choice - outputs [ 1 0 ] for two islands 
+    ifelse random-float 1 < female-philopatry
     [
       set breeding-grounds item ( natal-ground-id  - 1) colonies  
       set settled? true
@@ -70,106 +69,83 @@ to choose-colony [ birds philopatry ] ;an agentset of birds who need to choose a
   
 end
 
-
-to find-burrow ;a task solely for males  
-  
-  let potential-breeders females with [ settled? and not breeding? and life-stage = "Adult" ] ;potential-breeders returning
-  let returning-breeders n-of (random-binomial count(potential-breeders) prop-returning-breeders) potential-breeders ;actual returning individuals
+to emigrate ;Currently kills off birds once they have reached the threshold for number of unsuccessful breeding attempts.
+  ;;which birds and how many
+  let pot-emigrants breeders with [ time-since-breed >= emigration-timer ]
+  let n-pot-emigrants count pot-emigrants
  
-  if any? returning-breeders ;defensive to make sure that some birds exist.
+  let raft-prob random-sigmoid n-pot-emigrants emigration-curve raft-half-way ;;setting c1 as 2 as this creates a steeper curve with more of threshold
+  
+  if raft-prob >= random-float 1
   [
-    ask returning-breeders
+    let n-emigrants random-binomial n-pot-emigrants emigrant-perc
+    
+    ;;capturing data
+    if capture-data?
     [
-      if debug? [ show "male moving" ]
-      
-      ifelse burrow != no-patches ;moving to burrow if one available
-      [
-        if debug? [ show burrow ]
-        
-        move-to burrow ;moving to current burrow
-        
-        ;moving in?
-        ifelse [ occupancy ] of burrow < [ occupancy-limit ] of burrow ;checking there is room still
-        [
-          est-burrow
-        ]
-        ;if their current burrow is occupied...
-        [ 
-          set burrow no-patches ;removing current burrow        
-          ifelse count( neighbourhood with [ occupancy < occupancy-limit ] ) > 0 ;checking if they have alternatives in the neighbourhood
-          [
-            prospect
-          ]
-          [
-            setxy 0 0 ;They quit if there are no burrows free... possibly amend this?
-          ]
-        ]  
-      ]
-      
-      
-      [ ;else statement for birds with no burrow
-        let free-burrows count( breeding-grounds with [ occupancy < occupancy-limit ] )
-        if free-burrows > 0 
-        [ ;else statement if the bird does not have a burrow.
-          move-to one-of breeding-grounds with [ occupancy < occupancy-limit ]
-          prospect   
-        ]
-      ]
+      island-emigrant-census n-emigrants ;;capturing number of emmigrants coming from each island.
+    ]
+    
+    ;;output?
+    if verbose? [ type "Number of emigrants" show n-emigrants ]
+    
+    ask n-of n-emigrants pot-emigrants
+    [
+      die
     ]
   ]
   
-end
+end  
 
-to prospect
+
+;;MALES ASSIGNED TO PATCHES
+to burrowing ;;a task solely for males  
   
-  let tries 1
+  let potential-breeders females with [ settled? and not breeding? and life-stage = "Adult" ]
+  ;;potential-breeders returning
+  let returning-breeders n-of (random-binomial count(potential-breeders) prop-returning-breeders) potential-breeders ;actual returning individuals
+ 
+  ;;calculating the number of males to distribute across patches
+  let num-breeders count(returning-breeders) ;* sex-ratio
   
-  while [ tries < max-tries ]
-  [
-    let alternatives neighbourhood with [ occupancy < occupancy-limit and habitat-attrac >= [ habitat-attrac ] of self ] ;looking at nearby alternatives
-    ifelse count(alternatives) > 0 
-    [
-      move-to one-of alternatives
-      ifelse random-float 1 < habitat-attrac
-      [
-        est-burrow
-        set tries (tries + max-tries) ; ending
-      ]
-      [
-        set tries (tries + 1) ;updating the number of attempts
-        if tries >= max-tries
-        [
-          setxy 0 0 ;giving up and flying off
-        ]
-      ]
+  foreach island-id [ n ->
+    
+    ;;Calculating number of males to spread around
+    let num-female-breeders count females with [ settled? and life-stage = "Adult" and breeding-ground-id = n ]
+    let num-males-to-allocate (num-female-breeders * sex-ratio) ;working out the proportion of males to females : change this to a scalar
+    
+    ;; pulling the current colony patch-set
+    let curr-island item (n - 1) colonies
+ 
+    ;; make a list of patches sorted on attractiveness
+    let sorted-att sort-on [ habitat-attrac ] curr-island
+    
+    ;;Values for the multinomial draw
+    let att-only [] ; list to contain habitat attract values
+    foreach sorted-att [ sa ->
+      set att-only lput round([habitat-attrac] of sa * 100) att-only
     ]
-    [
-      move-to one-of breeding-grounds with [ occupancy < occupancy-limit and habitat-attrac >= [ habitat-attrac ] of self ] ;looking further afield !!!!THIS MIGHT NEED TO BE REFINED - KEY ASSUMPTIONS OF KNOWLEDGE BEING MADE!!!! - MAY MEAN THAT THEY TRY REPEATEDLY AT THE SAME SPOT
-      ifelse random-float 1 < habitat-attrac
-      [
-        est-burrow
-        set tries (tries + max-tries) ; ending
-      ]
-      [
-        set tries (tries + 1) ;updating the number of attempts
-        if tries >= max-tries
-        [
-          setxy 0 0 ;giving up and flying off
-        ]
-      ]
-    ]
-  ] ;;put in an alternative for if the tries = 1 or greater
-end
-
-to est-burrow
+    
+    ;; get rounded attractiveness frpm taht sorted list
+    let males-to-allocate multinomial-int num-males-to-allocate att-only true
+    
+    ;; allocate to the patches using another foreach to iterate over sorted patch list
+    (foreach sorted-att males-to-allocate [ [a m] ->
+      ask a [set male-count m] 
+    ])
+  ]    
   
-  set occupancy (occupancy + 1)
-  set habitat-attrac (patch-occ * 0.3) + (hab-quality * 0.4) + (local-occ * 0.3) ;updating attractiveness
-  set breeding? true
-  set burrow patch-here
+  ;;creating a list of patches with males for efficiency when females arrive
+  set lekking-males []
+ 
+  foreach island-id [n -> 
+    let target-colony item (n - 1) colonies
+    set lekking-males lput (target-colony with [ male-count > 0 ]) lekking-males
+  ] 
   
 end
 
+;; FEMALES FINDING A MATE
 to find-mate ;a task solely for females
   
   
@@ -177,30 +153,28 @@ to find-mate ;a task solely for females
   
   ;Old pairings
   
-  if debug? [type "Mated females " show count(adult-females with [ mating-id >= 0 ])]
-
+  if debug? [type "Mated females " show count(adult-females with [ burrow != no-patches ])]
+  
   set old-pairs 0
   
-  ask adult-females with [ not breeding? and mating-id >= 0] ;females who already have a mate 
+  ask adult-females with [ not breeding? and  burrow != no-patches ] ;females who already have a mate 
   [
     if debug? [ show "Mated female moving" ]
     reunite ;Finding mate from a previous pairing
   ] 
-
   
-
   
-  ;New pairs
-  if debug? [type "Unmated females " show count(adult-females with [ mating-id = -1 ])]
+  ;  ;New pairs
+  if debug? [type "Unmated females " show count(adult-females with [ burrow = no-patches ])]
   
   set new-pairs 0 ;counter for new mates
   
-  ask adult-females with [ not breeding? and mating-id = -1 ] ;females who need to find a mate
+  ask adult-females with [ not breeding? and burrow = no-patches ] ;females who need to find a mate
   [
-      if debug? [ show "Unmated female moving" ] ;isolating individuals
-      pair
+    if debug? [ show "Unmated female moving" ] ;isolating individuals
+    pair
   ]
-
+  
   
   if verbose? 
   [
@@ -210,82 +184,90 @@ to find-mate ;a task solely for females
 end
 
 to reunite
-
-  move-to mate ;move straight to their mate
   
-  if [ breeding? ] of mate
+  move-to burrow ;move straight to their mate
+  
+  ifelse male-count > 0 and occupancy < occupancy-limit
   [
-    set breeding? true
-    set mating? true
-    
-    ask mate ;asking the male to set mating to true too
-    [
-      set mating? true
-    ]
-    
-    set old-pairs old-pairs + 1
+    nest
+  ]
+  [
+    set burrow no-patches
   ]
   
 end
 
 to pair
   
-  let f-breeding-ground [ breeding-ground-id ] of self
-  let free-males males with [ mating-id = -1 and breeding? and breeding-ground-id = f-breeding-ground ] 
+  ;;selecting the patch-set of interest to identify potential burrows
+  let target-colony [ breeding-ground-id ] of self
+  let potential-burrows item (target-colony - 1) lekking-males ;;-1 because lists start at 0
   
-  if any? free-males ;checking there are potential males
+  ;;debugging
+  if debug? [ type "potential-burrows " show count(potential-burrows) ]
+  
+  ;;Females hunting for potential home
+  if any? potential-burrows
   [
-    let potential-mates breeding-grounds with [ count (males-here with [ mating-id = -1 ]) > 0 ] 
-    let tries 1
-    while [ tries < max-tries and any? free-males ]
+    let tries 1 
+    while [ tries < max-tries ]
     [
+      
       ifelse tries = 1
-      [
-        move-to one-of potential-mates 
+      [ 
+        move-to one-of potential-burrows
       ]
       [
-        let alternatives neighbors with [ count (males-here with [ mating-id = -1 ]) > 0 and habitat-attrac > [ habitat-attrac ] of self ]
-        ifelse count (alternatives) > 0
-          [ 
-            move-to one-of alternatives ;move to potential breeding ground
+        let alternatives neighbourhood with [ male-count > 0 and habitat-attrac >= [ habitat-attrac ] of self ] ;;neighbourhood defined at set up and has a radius defined by slider
+        ifelse count(alternatives) > 0 ;;Checking there is a neighbour that meets this definition
+        [ 
+          move-to one-of alternatives ;;move to potential breeding ground
         ]
         [
-          move-to one-of potential-mates
+          move-to one-of potential-burrows with [ habitat-attrac >= [ habitat-attrac ] of self ] ;;will move to somewhere more attractive
         ]
-      ]
+      ]   
       
-      if debug? [ type "free-males " show count (free-males) ]
-      
-      ifelse random-float 1 < habitat-attrac ;check if they want to move in
-      [
-        let f-mate self
-        let m-mate one-of (males-on patch-here) with [mating-id = -1]
+      ifelse random-float 1 < habitat-attrac ;;checking if the male was successful in courting
+      [ 
+        nest
         
-        ask m-mate
-        [
-          set mate f-mate
-          set mating-id [ who ] of f-mate
-          set mating? true
-        ]        
-        
-        set breeding? true
-        set mating? true
-        set mate m-mate
-        set mating-id [mating-id] of m-mate
-        
-        set new-pairs new-pairs + 1 ;counter for number of newly formed pairs 
-        
-        set tries (tries + max-tries) ;end the mate hunt
+        set new-pairs new-pairs + 1 ;;counter for number of newly formed pairs    
+        set tries (tries + max-tries) ;;end the mate hunt
       ]
       [
-        set tries (tries + 1) ;updating the number of attempts if they didn't find a mate they liked
+        set tries (tries + 1) ;;updating the number of attempts if they didn't find a mate they liked
       ]
-    ] 
+    ]
+  ]
+
+end
+
+to nest
+  ;;updating parameters if courting was successful
+  set breeding? true
+  set mating? true
+  set burrow patch-here
+  set occupancy occupancy + 1
+  set male-count male-count - 1
+  set habitat-attrac (patch-occ * 0.35) + (hab-quality * 0.3) + (local-occ * 0.35)
+  
+  if male-count = 0 ;;checking if the patch can support anymore females
+  [
+    no-vacancy ;;removing this patch from the potentials - we assume that the females are only trying where there is a male actively calling for a mate
   ]
 end
 
+to no-vacancy ;;updates a patch-set to remove now full patches
+  let target-colony ([ breeding-ground-id ] of self) - 1 ;;which patch-set is needed
+  let male-group item target-colony lekking-males ;;pulling out that patch-set
+  set male-group male-group with [ male-count > 0 ] ;;updating the patch-set
+  set lekking-males replace-item target-colony lekking-males male-group  ;;replacing it in the global patch-set
+end
 
-to fledging ;need to ask one in each pair to hatch....
+;;HATCHING-FLEDGING
+
+to hatching-fledging ;need to ask one in each pair to hatch....
   
   let safe-breeders females with [ mating? and breeding? and not predators? ] ; taking the females on the safe islands...
   reproduce safe-breeders false
@@ -309,7 +291,10 @@ to reproduce [ breeding-birds predation? ]
     ask successful-breeders
     [
       set time-since-breed 0
-      hatch-chick
+      hatch-females 1
+      [
+        raise-chick orange
+      ]
     ]
   ]
   [
@@ -322,26 +307,13 @@ to reproduce [ breeding-birds predation? ]
     ask successful-breeders
     [
       set time-since-breed 0
-      hatch-chick
+      hatch-females 1
+      [
+        raise-chick orange
+      ]
     ]
   ]      
   
-end
-
-to hatch-chick
-        ifelse random-float 1 > 0.49
-      [
-        hatch-females 1
-        [
-          raise-chick orange
-        ]
-      ]
-      [
-        hatch-males 1
-        [
-          raise-chick violet
-        ]
-      ]
 end
 
 
@@ -357,11 +329,6 @@ to mortality
   
   ask adult-fatalities ;adult mortality
   [
-    ;show "Adult fatality"
-    if mating-id != -1
-    [
-      widow
-    ]
     die
   ]
   
@@ -375,11 +342,6 @@ to mortality
   
   ask adult-killed;adult predation
   [
-    ;show "Adult killed"
-    if mating-id != -1
-    [
-      widow
-    ]
     die
   ]
   
@@ -387,42 +349,54 @@ to mortality
   let seniors turtles with [age > max-age]
   ask n-of (random-binomial count(seniors) old-mortality) seniors
   [
-    if mating-id != -1
-    [
-      widow
-    ]
     die 
   ]
   
 end
 
-
-to widow
-  
-  ask mate
-  [
-    set mating-id -1
-    set mate no-turtles
-    set mating? false
-    set burrow no-patches
-  ]
-  
-end
-
 to census
-
+;Storing data!! To come
 end
 
 ;Moving birds off islands, resetting breeding and mating, then clearing burrow current occupancy 
 to season-reset
-  
-  ;updating island attractiveness
-  
+
   
   ;updating counter as these birds may move on in future seasons
   ask breeders
   [
-    set time-since-breed time-since-breed + 1
+    set time-since-breed time-since-breed + 1 ;;birds which have just bred will have a value of 1
+  ]
+  
+  assess-islands ;;updating the attractiveness of islands for the philopatry test
+  
+  if prospect? 
+  [
+    prospect ;;creation of new burrows
+  ]
+  
+  if collapse?
+  [
+    collapse ;;chance of burrows collapsing
+  ]
+  
+  if collapse? or prospect?
+  [
+    update-attract
+  ]
+  
+  if update-colour? ;; purely for nice visualisations.... probably stupidly expensive
+  [
+    
+    ;;for the colour scale...
+    let min-occ-lim min [ occupancy-limit ] of the-islands
+    let max-occ-lim max [ occupancy-limit ] of the-islands
+    
+    ask the-islands
+    [  
+      ;;making it prettier
+      set pcolor scale-color green occupancy-limit max-occ-lim min-occ-lim
+    ]
   ]
   
   ;resetting
@@ -436,81 +410,142 @@ to season-reset
   ask the-islands
   [
     set occupancy 0
+    set male-count 0
   ]
   
 end
 
+to assess-islands
 
+  set isl-occ[]
+  ;updating island attractiveness
+  foreach island-id [ n ->
+    
+    let target-isl the-islands with [ colony-id = n ]
+    set isl-occ lput sum [ occupancy ] of target-isl isl-occ
+    
+  ]
   
-
-
-
-
   
-  ;    ;Chick natural mortality
-  ;  let chicks turtles with [ life-stage = "Juvenile" and age = 0 ]
-  ;  let num-chicks count chicks
-  ;  
-  ;  show count chicks
-  ;  
-  ;  
-  ;  let unsuccessful-fledge n-of ( random-binomial num-chicks chick-mortality ) chicks;chick mortality
-  ;  ask unsuccessful-fledge
-  ;  [
-  ;    show "Chick dying"
-  ;    die
-  ;  ]
-  ;
-  ;  ;Chick predation deaths
-  ;  let chicks-at-risk turtles with [ life-stage = "Juvenile" and age = 0 and predators? ]
-  ;  let chick-risk-count count chicks-at-risk
-  ; 
-  ;  show count chicks-at-risk
-  ;  
-  ;  let predator-kills n-of ( random-binomial chick-risk-count chick-predation ) chicks-at-risk
-  ;  ask predator-kills ;chick predation
-  ;  [
-  ;    show "Chick killed"
-  ;    die
-  ;  ]
+  set world-occ sum(isl-occ)
   
+  ;;To be split off into it's own reporter function!!!!
+    if isl-att-curve = "uniform"
+  [ 
+    foreach island-id [ n ->
+      let isl-att  round((1 / max(island-id)) * 100)
+      set island-attractiveness lput isl-att island-attractiveness
+    ]
+  ]
+  
+  if isl-att-curve = "linear"
+  [
+     foreach island-id [ n ->
+      let isl-att round((isl-occ / world-occ) * 100)
+      set island-attractiveness lput isl-att island-attractiveness
+    ]
+  ]
+  
+  if isl-att-curve = "sigmoid1"
+  [
+    foreach island-id [ n ->
+      let occ-prop isl-occ / world-occ
+      let isl-att round((random-sigmoid occ-prop  0.5 1) * 100)
+      set island-attractiveness lput isl-att island-attractiveness
+    ]
+  ]
+  
+  
+  if isl-att-curve = "beta1"
+  [
+    foreach island-id [ n ->
+      let occ-prop isl-occ / world-occ
+      let isl-att beta-pdf round((occ-prop 2 2) * 100)
+      set island-attractiveness lput isl-att island-attractiveness  
+    ]
+  ]
+  
+  
+    if isl-att-curve = "beta2"
+  [
+    foreach island-id [ n ->
+      let occ-prop isl-occ / world-occ
+      let isl-att beta-pdf round((occ-prop 0.5 1) * 100)
+      set island-attractiveness lput isl-att island-attractiveness  
+    ]
+  ]
+  
+  
+  if isl-att-curve = "asymptotic"
+  [
+    foreach island-id [ n ->
+      let occ-prop isl-occ / world-occ
+      let isl-att round((occ-prop / (1 + occ-prop)) * 100)
+      set island-attractiveness lput isl-att island-attractiveness  
+    ]
+  ]
+    
+  ;;Calculating island attractiveness
+  ;set isl-attract map [ io -> ceiling((io / world-occ) * 100) ] isl-occ ;;rounding to an integer for the multinomial draw
+  ;set isl-attract  min isl-attract vagrancy ;;Chance of individuals arriving at an island and recolonising it (minimum number at each time step).  
 
+end
+
+
+to island-emigrant-census [emigrants]
   
-;  let safe-breeders females with [ mating? and breeding? and not predators? ] ; taking the females on the safe islands...
-;  
-;  ifelse [predators? [
-;    set X ncm * noise
-;    set breeding-birds ...
-;  ] [set X (ncm + predation-rate) * noise
-;    set breeding-birds...
-;    ] 
-;    let successful-breeders n-of (random-binomial count(safe-breeders) natural-chick-mortality) safe-breeders ;... and determining the number of chicks they successfully hatch
-;    
-;    if type predators? show count successful-breeders
-;    
-;    ;Safe island reproduction
-;    
-;    show count successful-breeders
-;    
-;    let unsafe-breeders females with [ mating? and breeding? and predators? ] ; taking the females on the predator infested islands...
-;    let n-breed (random-binomial count(unsafe-breeders) (chick-predation + natural-chick-mortality)) * random-normal 1 0.1 ;PUT SLIDERS - 0.1 especially
-;    let pred-successful-breeders n-breed n-of unsafe-breeders ;... and determining the number of chicks they successfully hatch
-;    set pred-successful-breeders pred-successful-breeders 
-;    ;Predator island reproduction
-;    ask pred-successful-breeders
-;    [
-;      ifelse random-float 1 > 0.49
-;      [
-;        hatch-females 1
-;        [
-;          raise-chick "orange"
-;        ]
-;      ]
-;      [
-;        hatch-males 1
-;        [
-;          raise-chick "purple"
-;        ]
-;      ]
-;    ]
-;    show count(pred-successful-breeders)  
+  foreach island-id [ n ->
+  set island-year lput count(emigrants) island-year ;; To be updated to divided this by year
+  ]
+  
+end
+
+to prospect
+  
+  ;;digging out new burrows
+  ask the-islands with [ male-count > 0 ]
+  [
+    let new-burrows round ( male-count / time-to-prospect )
+    set occupancy-limit occupancy-limit + new-burrows
+  ]
+  
+end
+
+to collapse
+  
+  ;;checking to see if patches collapes
+  ask the-islands 
+  [
+    ;;sigmoid distribution
+    ;;2 is the c1 value controlling curve. This creates a steeper curve to show more a threshold
+    let collapse-prob random-sigmoid occupancy-limit collapse-curve collapse-half-way
+    
+    ;;debugging
+    if debug? [ show collapse-prob ]
+    
+    if collapse-prob >= random-float 1
+    [
+      let n-collapse random-binomial occupancy-limit collapse-perc
+      
+      ;;output? - this will be very lengthy....
+      if verbose? [ type "Burrows lost" show n-collapse ]
+      
+      set occupancy-limit occupancy-limit - n-collapse
+    ]
+  ]
+  
+end
+
+to update-attract
+  ask the-islands
+  [
+    ;;initialising habitat attractiveness
+    set maxK max [ occupancy-limit ] of neighbourhood
+    ask the-islands with [ maxK != 0 ] ;defensive in case there are any patches surrounded by 0
+    [
+      set habitat-attrac ( occupancy-limit / maxK ) * 0.3
+    ]
+  ]
+end
+
+

@@ -22,7 +22,7 @@ to grow-islands ;creating islands and colonies
   
   repeat num-clust
   [
-    ask one-of patches with [ count patches with [ pcolor = green ] in-radius (clust-area + 1)  = 0 ]
+    ask one-of patches with [ count patches with [ pcolor = green ] in-radius (clust-area + 1)  = 0 and abs(pycor) > clust-area and abs(pxcor) > clust-area] ;Bouncing off edge of world
     [
       let cluster patches in-radius clust-area ;of patch-here;creating patch-set of the cluster
       
@@ -43,7 +43,7 @@ to grow-islands ;creating islands and colonies
   ;Setting some conviences names
   set colonies patches with [ colony-id > 0 ] ;the baseline initialisation for cells is 0 (i.e. sea cells are 0)
   set the-islands patches with [ habitable? ] ;convenience name
-  set island-id sort remove-duplicates [colony-id] of the-islands
+  set island-id sort remove-duplicates [ colony-id ] of the-islands ;;creating a list of island-id's
   set the-sea patches with [ not habitable? ]
  
   ;Creating my predator islands
@@ -54,25 +54,51 @@ to grow-islands ;creating islands and colonies
   set pred-islands patches with [ predators? ]
   set safe-islands patches with [ habitable? = true and not predators? ]
   
+  
+  ;Creating habitat heterogeneity and storing the colony patch-sets in a list (colonies)
   set colonies []
-  ;Creating 
   foreach island-id [n -> 
     dig-burrows n
     set colonies lput (patches with [colony-id = n]) colonies
   ] 
   
+  ;Now diffuse surface
+  diffuse occupancy-limit diffusion-prop
+  
+  ask patches
+  [
+    set occupancy-limit floor occupancy-limit
+  ]
+  
+  ;Removing occupancy limits that shouldn't exist
+  ask the-sea 
+  [
+    set occupancy-limit 0
+  ]
+
   
   ask patches with [ habitable? ]
   [
-    ifelse nhb-rad <= 1 [set neighbourhood (patch-set self neighbors with [ habitable? ])][set neighbourhood patches with [ habitable? ] in-radius nhb-rad] ; set neighbourhoods for only island patches
+    ifelse nhb-rad <= 1 [set neighbourhood (neighbors with [ habitable? ])][set neighbourhood patches with [ habitable? ] in-radius nhb-rad] ; set neighbourhoods for only island patches
   ]
   
+  ;;for the colour scale...
+  let min-occ-lim min [ occupancy-limit ] of the-islands
+  let max-occ-lim max [ occupancy-limit ] of the-islands
+  
   ask the-islands
-  [
-    set maxK max  [ occupancy-limit ] of neighbourhood
-    set habitat-attrac ( occupancy-limit / maxK ) * 0.3
+  [  
+    ;;making it prettier
+    set pcolor scale-color green occupancy-limit max-occ-lim min-occ-lim
+    
+    ;;initialising habitat attractiveness
+    set maxK max [ occupancy-limit ] of neighbourhood
+    ask the-islands with [ maxK != 0 ] ;defensive in case there are any patches surrounded by 0
+    [
+      set habitat-attrac ( occupancy-limit / maxK ) * 0.3
+    ]
   ]
-
+  
 end
 
 to dig-burrows [ n ]
@@ -100,11 +126,11 @@ to dig-burrows [ n ]
       ]
     ]
     
-    ;; otherwise pick a patch at random (this could ne neighbouring a suitable patch)
-    ;; if you want to make sure it does not you'd need ot use
+    ;; otherwise pick a patch at random (this could any neighbouring a suitable patch)
+    ;; if you want to make sure it does not you'd need to use
     ;; ask one-of patches with [(not suitable?) and (count neighbors with [suitable?] = 0)]
     [
-      ask one-of patches with [habitable? and not suitable?]
+      ask one-of island-patches with [habitable? and not suitable?]
       ;;ask one-of patches with [(not suitable?) and (count neighbors with [suitable?] = 0)]
       [
         set suitable? true
@@ -124,30 +150,7 @@ to dig-burrows [ n ]
       set occupancy-limit random-poisson low-lambda
     ]
   ]
-  
-  ;Now diffuse surface
-  diffuse occupancy-limit diffusion-prop
-  
-  ask patches
-  [
-    set occupancy-limit floor occupancy-limit
-  ]
-  
-  ;Removing occupancy limits that shouldn't exist
-  ask the-sea 
-  [
-    set occupancy-limit 0
-  ]
-   
-  ;Making it prettier
-  let min-occ-lim min [ occupancy-limit ] of island-patches
-  let max-occ-lim max [ occupancy-limit ] of island-patches
-  
- ask island-patches
-  [ 
-    set pcolor scale-color green occupancy-limit max-occ-lim min-occ-lim
-  ]
-  
+    
 end
 
 to init-adults
@@ -250,6 +253,12 @@ to assign-natal-grounds
   [ 
     set natal-ground-id one-of island-id ;Assigning a random colony as natal grounds
   ]
+end
+
+to create-data-sheet
+
+  set demography-series ["recruits" "" ] 
+  
 end
 
 
