@@ -25,7 +25,7 @@ globals
   pred-islands
   safe-islands
 
-  isl-attract ;;weighting for philopatry
+  island-attractiveness ;;weighting for philopatry
 
   lekking-males ;;list of colony patch-sets that contain the patches with male-count > 0
   breeders
@@ -40,6 +40,8 @@ globals
   juv-pop ;;the total number ofjuveniles
   pop-size ;;Total population
 
+  philopatry-out ;;Count of birds who failed a philopatry test each year leaving the system
+
   demography-series
   demography-year
   island-series
@@ -47,6 +49,9 @@ globals
 
   old-pairs
   new-pairs
+
+  ;;Distribution parameters
+  asymp-curve
 ]
 
 patches-own
@@ -274,9 +279,9 @@ NIL
 1
 
 SLIDER
-235
+240
 135
-407
+412
 168
 num-clust
 num-clust
@@ -777,7 +782,7 @@ diffusion-prop
 diffusion-prop
 0
 1
-0.3
+0.25
 0.01
 1
 NIL
@@ -912,10 +917,10 @@ capture-data?
 -1000
 
 SLIDER
-230
-85
-402
-118
+240
+90
+412
+123
 time-to-prospect
 time-to-prospect
 0
@@ -1073,8 +1078,23 @@ CHOOSER
 535
 isl-att-curve
 isl-att-curve
-"uniform" "linear" "sigmoid" "normal"
+"uniform" "linear" "sigmoid" "beta1" "beta2" "asymptotic"
+3
+
+SLIDER
+940
+765
+1112
+798
+emig-out-prob
+emig-out-prob
 0
+1
+0.4
+0.05
+1
+NIL
+HORIZONTAL
 
 @#$#@#$#@
 ## WHAT IS IT?

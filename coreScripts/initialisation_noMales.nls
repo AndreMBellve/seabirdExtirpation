@@ -150,6 +150,14 @@ to dig-burrows [ n ]
       set occupancy-limit random-poisson low-lambda
     ]
   ]
+  
+  
+  set island-attractiveness [] ; initialising
+  
+  foreach island-id [ i ->   
+    let isl-att round( (1 / max island-id) * 100 )
+    set island-attractiveness lput isl-att island-attractiveness
+  ]
     
 end
 

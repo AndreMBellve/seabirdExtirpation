@@ -49,23 +49,86 @@ end
 ;; COLONY CHOICE TO BE OVERHAULED - choice weighting by island attractiveness and potentially have a new group for immigrants who are unable to breed in x consecutive years
 to choose-colony [ birds philopatry ] ;;an agentset of birds who need to choose a colony and the philopatry for that sex
   
-  ask birds
-  [
-    ;; let target-isl multinomial-int 1 isl-attract true ;; how to convert this into a an island choice - outputs [ 1 0 ] for two islands 
-    ifelse random-float 1 < female-philopatry
+  ;;philopatry-out keeps count of the number of birds leaving the system on the basis of philopatry each year
+  set philopatry-out 0
+  
+  ;;Checking philopatry by island
+  foreach island-id [n -> 
+    
+    ;;Subsetting the birds we want to check for
+    let isl-birds birds with [ natal-ground-id = n ] 
+    
+    ;;Checking if there are any to allocate...
+    if any? isl-birds
     [
-      set breeding-grounds item ( natal-ground-id  - 1) colonies  
-      set settled? true
-      set breeding-ground-id natal-ground-id
-    ]
-    [
-      let colony-potentials remove natal-ground-id island-id
-      let colony-target one-of colony-potentials
-      set breeding-grounds item (colony-target - 1) colonies  
-      set settled? true
-      set breeding-ground-id one-of [ colony-id ] of breeding-grounds 
+      ;;How many return?
+      let num-success random-binomial count(isl-birds) philopatry
+      
+      ;;Updating their details
+      ask n-of num-success isl-birds 
+      [ 
+        set breeding-grounds item ( natal-ground-id  - 1) colonies  
+        set settled? true
+        set breeding-ground-id natal-ground-id
+      ]
+      
+      ;;How many birds to allocate
+      let num-failed (count(isl-birds) - num-success) 
+      
+      ;;Checking there are some birds to allocate
+      if num-failed > 0 
+      [
+        ;;Allocating on basis of island attractiveness (+ chance of leaving system)
+        let isl-allocations multinomial-int num-failed island-attractiveness true
+        
+        ;;Finding the number of possible options
+        let num-opt n-values length isl-allocations [ i -> i ]
+        
+        ;;Running through each island to allocate the correct number of birds - they can end up at natal island as it is assumed they checked out the others before deciding they had it best.
+        foreach num-opt [ o ->
+          ifelse o < max(island-id) - 1 ;;If it is a true island...
+          [
+            ask n-of item o isl-allocations isl-birds with [ settled? = false ]
+            [
+              set breeding-grounds item (o + 1) colonies
+              set settled? true
+              set breeding-ground-id (o + 1)
+            ]
+          ]
+          ;;...or if the count is for emigrating out of the system
+          [
+            ;;updating the number leaving
+            set philopatry-out philopatry-out + item o isl-allocations
+            
+            ;;birds leaving the system
+            ask n-of item o isl-allocations  isl-birds with [ settled? = false ]
+            [
+              die          
+            ]
+          ]
+        ]
+      ]
     ]
   ]
+    
+;  ask birds
+;  [
+;    ;; let target-isl multinomial-int 1 isl-attract true ;; how to convert this into a an island choice - outputs [ 1 0 ] for two islands 
+;    ifelse random-float 1 < female-philopatry
+;    [
+;      set breeding-grounds item ( natal-ground-id  - 1) colonies  
+;      set settled? true
+;      set breeding-ground-id natal-ground-id
+;    ]
+;    [
+;      ;;;;;CODE TO BE OVERHAULED TO ALLOW FOR ISLAND CHOICE
+;      let colony-potentials remove natal-ground-id island-id
+;      let colony-target one-of colony-potentials
+;      set breeding-grounds item (colony-target - 1) colonies  
+;      set settled? true
+;      set breeding-ground-id one-of [ colony-id ] of breeding-grounds 
+;    ]
+;  ]
   
 end
 
@@ -96,7 +159,6 @@ to emigrate ;Currently kills off birds once they have reached the threshold for 
   ]
   
 end  
-
 
 ;;MALES ASSIGNED TO PATCHES
 to burrowing ;;a task solely for males  
@@ -361,6 +423,7 @@ end
 ;Moving birds off islands, resetting breeding and mating, then clearing burrow current occupancy 
 to season-reset
 
+    assess-islands ;;updating the attractiveness of islands for the philopatry test
   
   ;updating counter as these birds may move on in future seasons
   ask breeders
@@ -368,24 +431,26 @@ to season-reset
     set time-since-breed time-since-breed + 1 ;;birds which have just bred will have a value of 1
   ]
   
-  assess-islands ;;updating the attractiveness of islands for the philopatry test
-  
+   ;;creation of new burrows
   if prospect? 
   [
-    prospect ;;creation of new burrows
+    prospect
   ]
   
+  ;;chance of burrows collapsing
   if collapse?
   [
-    collapse ;;chance of burrows collapsing
+    collapse 
   ]
   
+  ;;Updating habitat attractiveness values
   if collapse? or prospect?
   [
     update-attract
   ]
   
-  if update-colour? ;; purely for nice visualisations.... probably stupidly expensive
+   ;; purely for nice visualisations.... probably stupidly expensive
+  if update-colour?
   [
     
     ;;for the colour scale...
@@ -394,12 +459,11 @@ to season-reset
     
     ask the-islands
     [  
-      ;;making it prettier
       set pcolor scale-color green occupancy-limit max-occ-lim min-occ-lim
     ]
   ]
   
-  ;resetting
+  ;Resetting
   ask turtles
   [
     setxy 0 0
@@ -416,24 +480,29 @@ to season-reset
 end
 
 to assess-islands
-
+  
+  ;Clearing the list
   set isl-occ[]
-  ;updating island attractiveness
+  
+  ;Updating island occupancies
   foreach island-id [ n ->
     
     let target-isl the-islands with [ colony-id = n ]
     set isl-occ lput sum [ occupancy ] of target-isl isl-occ
     
   ]
-  
-  
+ 
+  ;; Calculating the occupancy of all the islands
   set world-occ sum(isl-occ)
   
-  ;;To be split off into it's own reporter function!!!!
+  ;;Emptying attractiveness list for recalculation
+  set island-attractiveness []
+  
+  ;;Calculating island attractiveness based on curves
     if isl-att-curve = "uniform"
   [ 
     foreach island-id [ n ->
-      let isl-att  round((1 / max(island-id)) * 100)
+      let isl-att 1 / max(island-id)
       set island-attractiveness lput isl-att island-attractiveness
     ]
   ]
@@ -441,53 +510,60 @@ to assess-islands
   if isl-att-curve = "linear"
   [
      foreach island-id [ n ->
-      let isl-att round((isl-occ / world-occ) * 100)
+      let isl-att item (n - 1) isl-occ / world-occ
       set island-attractiveness lput isl-att island-attractiveness
     ]
   ]
   
-  if isl-att-curve = "sigmoid1"
+  if isl-att-curve = "sigmoid"
   [
     foreach island-id [ n ->
-      let occ-prop isl-occ / world-occ
-      let isl-att round((random-sigmoid occ-prop  0.5 1) * 100)
+      let occ-prop item (n - 1) isl-occ / world-occ
+      let isl-att random-sigmoid occ-prop  0.5 1
       set island-attractiveness lput isl-att island-attractiveness
     ]
   ]
   
-  
-  if isl-att-curve = "beta1"
+    if isl-att-curve = "asymptotic"
   [
     foreach island-id [ n ->
-      let occ-prop isl-occ / world-occ
-      let isl-att beta-pdf round((occ-prop 2 2) * 100)
+      let occ-prop item (n - 1) isl-occ / world-occ
+      let isl-att asymptotic-pdf occ-prop 1 asymp-curve       
       set island-attractiveness lput isl-att island-attractiveness  
     ]
   ]
   
+;  if isl-att-curve = "beta1"
+;  [
+;    foreach island-id [ n ->
+;      let occ-prop item (n - 1) isl-occ / world-occ
+;      let isl-att beta-pdf occ-prop 2 2
+;      set island-attractiveness lput isl-att island-attractiveness  
+;    ]
+;    let beta-sum sum island-attractiveness
+;    set island-attractiveness map [ bs -> bs / beta-sum ] island-attractiveness
+;  ]
+;  
+;  if isl-att-curve = "beta2"
+;  [
+;    foreach island-id [ n ->
+;      let occ-prop item (n - 1) isl-occ / world-occ
+;      let isl-att beta-pdf occ-prop 5 1
+;      set island-attractiveness lput isl-att island-attractiveness  
+;    ]
+;    let beta-sum sum island-attractiveness
+;    set island-attractiveness map [ bs -> bs / beta-sum ] island-attractiveness
+;  ]
+;  
+  ;;Adding on probability of emigrating out of the system
+  set island-attractiveness lput emig-out-prob island-attractiveness
   
-    if isl-att-curve = "beta2"
-  [
-    foreach island-id [ n ->
-      let occ-prop isl-occ / world-occ
-      let isl-att beta-pdf round((occ-prop 0.5 1) * 100)
-      set island-attractiveness lput isl-att island-attractiveness  
-    ]
-  ]
+  ;;Calculating the total to divide by
+  let total-att sum(island-attractiveness)
   
-  
-  if isl-att-curve = "asymptotic"
-  [
-    foreach island-id [ n ->
-      let occ-prop isl-occ / world-occ
-      let isl-att round((occ-prop / (1 + occ-prop)) * 100)
-      set island-attractiveness lput isl-att island-attractiveness  
-    ]
-  ]
-    
-  ;;Calculating island attractiveness
-  ;set isl-attract map [ io -> ceiling((io / world-occ) * 100) ] isl-occ ;;rounding to an integer for the multinomial draw
-  ;set isl-attract  min isl-attract vagrancy ;;Chance of individuals arriving at an island and recolonising it (minimum number at each time step).  
+  ;;Normalising to be between 0 and 100
+  set island-attractiveness map [ ta -> round((ta / total-att) * 100) ] island-attractiveness
+
 
 end
 
