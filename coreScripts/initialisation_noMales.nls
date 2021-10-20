@@ -1,4 +1,84 @@
-to init-patches ;creating default patches and patch-sets (all values set at value for the sea)
+to set-defaults
+  
+  ;;Meta-model settings
+  set debug? FALSE
+  set verbose? FALSE
+  set profiler? FALSE
+  set capture-data? FALSE
+  
+  ;;ENVIRONMENT
+  
+  ;;Island creation
+  set num-clust 2
+  set clust-area 10
+  set clust-density 1
+  set num-predator-islands 1
+  
+  ;;Habitat suitability
+  set low-lambda 2
+  set high-lambda 90
+  set prop-suitable 0.5
+  set habitat-aggregation 0.2
+  set diffusion-prop 0.3
+  
+  set nhb-rad 4 ;;Assumed knowledge radius of 450 metres
+ 
+  ;;Environmental effects
+  set collapse? TRUE
+  set collapse-half-way 70
+  set collapse-perc 0.3
+  set collapse-curve 2
+  
+  set prospect? TRUE
+  set time-to-prospect 3
+  
+  set update-colour? TRUE
+  
+  ;;SEABIRDS
+    
+  ;;Seabird starting populations
+  set starting-juveniles 200
+  set starting-seabird-pop 1000
+  set sex-ratio 0.5
+  
+  ;;Philopatry and Emigration
+  set age-at-first-breeding 6
+  set age-first-return 6
+  
+  set female-philopatry 0.95
+  
+  set emigration-timer 2
+  set emigration-rate 0.8
+  set raft-half-way 100
+  set emigrant-perc 0.8
+  set emig-out-prob 0.4
+  set emigration-curve 0.5
+  
+  set vagrancy 0.01
+  
+  set prop-returning-breeders 0.95
+  
+  ;;Mortality effects
+  set natural-chick-mortality 0.4
+  set juvenile-mortality 0.65
+  set adult-mortality 0.05
+  set mortality-sd 0.2
+  
+  set max-age 28
+  set old-mortality 0.8
+  
+  ;;Predation effects
+  set chick-predation 0.5
+  set adult-predation 0.05
+  
+  ;;Island selection
+  set isl-att-curve "sigmoid"
+  
+end
+
+
+
+to init-patches ;;Creating default patches and patch-sets (all values set at value for the sea)
   set pred-islands no-patches 
   
   ask patches
@@ -16,9 +96,42 @@ to init-patches ;creating default patches and patch-sets (all values set at valu
   
 end
 
-to grow-islands ;creating islands and colonies
+;to init-isl-from-file [ datafile-name ]
+;  
+;  ;;carefully - wrap this function to fail gracefully if there is no file that can be loaded.
+;  let init-data csv:from-file  datafile-name
+;
+;  ;;make the islands as blobs
+;  
+;  let headers item 0 init-data
+;  
+;  
+;  
+;  ;;Something to execute once per row (to create islands) - tie in other function for island creation
+;   foreach init-data [ i ->
+;   let isl-id item 0 i
+;    
+;   ;;grow-islands
+;    ;;give the it the list i
+;    ;;set the patches own
+;    
+;    ask patches with [isl-id = isl-id]
+;    [
+;      let cmd word "set"  item 
+;      run cmd  
+;    ]
+;    
+;
+;    
+;  ]
+;
+;;;Repeats once for each column -define island parameters (all of these to become island-own
+;  
+;end
+
+to grow-islands ;;Creating islands and colonies
   
-  let idx 1 ;initialising the round counter for definign the habitat-id variable
+  let idx 1 ;;initialising the round counter for definign the habitat-id variable
   
   repeat num-clust
   [

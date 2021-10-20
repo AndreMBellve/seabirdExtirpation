@@ -344,7 +344,7 @@ to reproduce [ breeding-birds predation? ]
   ifelse predation?
   [
     let total-mortality chick-predation + natural-chick-mortality
-    let n-breed (random-binomial count(breeding-birds) (1 - total-mortality))  * random-normal 1 mortality-sd ;Factoring mortality, predation and noise into the hatch success
+    let n-breed (binomial count(breeding-birds) (1 - total-mortality))  * random-normal 1 mortality-sd ;Factoring mortality, predation and noise into the hatch success
     set n-breed round(min(list n-breed count(breeding-birds))) ;preventing cases where more are selected than exist    
     let successful-breeders n-of n-breed breeding-birds
     
@@ -360,7 +360,7 @@ to reproduce [ breeding-birds predation? ]
     ]
   ]
   [
-    let n-breed (random-binomial count(breeding-birds) (1 - natural-chick-mortality))  * random-normal 1 mortality-sd ;Factoring mortality, predation and noise into the hatch success    
+    let n-breed (binomial count(breeding-birds) (1 - natural-chick-mortality))  * random-normal 1 mortality-sd ;Factoring mortality, predation and noise into the hatch success    
     set n-breed round(min(list n-breed count(breeding-birds))) ;preventing cases where more are selected than exist
     let successful-breeders n-of n-breed breeding-birds
       
@@ -385,7 +385,7 @@ to mortality
   let adults turtles with [ life-stage = "Adult" and not predators? ]
   let num-adults count adults
   
-  let num-fatalities ( random-binomial num-adults adult-mortality )  * random-normal 1 mortality-sd
+  let num-fatalities ( binomial num-adults adult-mortality )  * random-normal 1 mortality-sd
   set num-fatalities round(min(list num-fatalities num-adults)) 
   let adult-fatalities n-of num-fatalities adults
   
@@ -398,7 +398,7 @@ to mortality
   let adults-at-risk turtles with [ life-stage = "Adult" and predators? ] 
   let adult-risk-count count adults-at-risk
   
-  let num-killed (random-binomial adult-risk-count (adult-mortality + adult-predation))  * random-normal 1 mortality-sd
+  let num-killed (binomial adult-risk-count (adult-mortality + adult-predation))  * random-normal 1 mortality-sd
   set num-killed round(min(list num-killed adult-risk-count)) 
   let adult-killed n-of num-killed adults-at-risk
   
@@ -409,7 +409,7 @@ to mortality
   
   ;senescence of old birds
   let seniors turtles with [age > max-age]
-  ask n-of (random-binomial count(seniors) old-mortality) seniors
+  ask n-of ( random-binomial count(seniors) old-mortality ) seniors
   [
     die 
   ]
@@ -509,6 +509,7 @@ to assess-islands
   
   if isl-att-curve = "linear"
   [
+    show "linear"
      foreach island-id [ n ->
       let isl-att item (n - 1) isl-occ / world-occ
       set island-attractiveness lput isl-att island-attractiveness
@@ -533,28 +534,35 @@ to assess-islands
     ]
   ]
   
-;  if isl-att-curve = "beta1"
-;  [
-;    foreach island-id [ n ->
-;      let occ-prop item (n - 1) isl-occ / world-occ
-;      let isl-att beta-pdf occ-prop 2 2
-;      set island-attractiveness lput isl-att island-attractiveness  
-;    ]
-;    let beta-sum sum island-attractiveness
-;    set island-attractiveness map [ bs -> bs / beta-sum ] island-attractiveness
-;  ]
-;  
-;  if isl-att-curve = "beta2"
-;  [
-;    foreach island-id [ n ->
-;      let occ-prop item (n - 1) isl-occ / world-occ
-;      let isl-att beta-pdf occ-prop 5 1
-;      set island-attractiveness lput isl-att island-attractiveness  
-;    ]
-;    let beta-sum sum island-attractiveness
-;    set island-attractiveness map [ bs -> bs / beta-sum ] island-attractiveness
-;  ]
-;  
+  if isl-att-curve = "beta1"
+  [
+    show "beta1"
+    foreach island-id [ n ->
+      let occ-prop item (n - 1) isl-occ / world-occ
+      show occ-prop
+      let isl-att dbeta occ-prop 2 2
+      set island-attractiveness lput isl-att island-attractiveness  
+    ]
+    set island-attractiveness map [ ia -> ia + 0.01 ] island-attractiveness
+    show island-attractiveness
+    let beta-sum sum island-attractiveness
+    show beta-sum
+    set island-attractiveness map [ ia -> ia / beta-sum ] island-attractiveness
+    show island-attractiveness
+    
+  ]
+  
+  if isl-att-curve = "beta2"
+  [
+    foreach island-id [ n ->
+      let occ-prop item (n - 1) isl-occ / world-occ
+      let isl-att dbeta occ-prop 5 1
+      set island-attractiveness lput isl-att island-attractiveness  
+    ]
+    let beta-sum sum island-attractiveness
+    set island-attractiveness map [ bs -> bs / beta-sum ] island-attractiveness
+  ]
+  
   ;;Adding on probability of emigrating out of the system
   set island-attractiveness lput emig-out-prob island-attractiveness
   

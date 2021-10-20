@@ -1,7 +1,9 @@
 extensions
 [
-  rnd
-  profiler
+  csv ;;loading in data for setup
+  rnd ;;distribution functions
+  profiler ;;profiling to detect bottlenecks
+  stats ;;beta distribution pdf
   ;rnetlogo
 ]
 
@@ -237,8 +239,8 @@ SLIDER
 starting-seabird-pop
 starting-seabird-pop
 0
-1000
-518.0
+2000
+1000.0
 1
 1
 NIL
@@ -280,9 +282,9 @@ NIL
 
 SLIDER
 240
-135
+130
 412
-168
+163
 num-clust
 num-clust
 0
@@ -295,14 +297,14 @@ HORIZONTAL
 
 SLIDER
 237
-182
+177
 409
-215
+210
 clust-area
 clust-area
 0
 20
-6.0
+10.0
 1
 1
 NIL
@@ -310,14 +312,14 @@ HORIZONTAL
 
 SLIDER
 236
-236
+231
 408
-269
+264
 clust-density
 clust-density
 0
 1
-1.0
+0.6
 0.1
 1
 NIL
@@ -332,7 +334,7 @@ female-philopatry
 female-philopatry
 0
 1
-0.96
+0.95
 0.01
 1
 NIL
@@ -372,7 +374,7 @@ low-lambda
 low-lambda
 0
 200
-5.0
+2.0
 1
 1
 NIL
@@ -387,7 +389,7 @@ chick-predation
 chick-predation
 0
 1
-0.43
+0.5
 0.01
 1
 NIL
@@ -402,7 +404,7 @@ adult-mortality
 adult-mortality
 0
 1
-0.04
+0.05
 0.01
 1
 NIL
@@ -417,7 +419,7 @@ juvenile-mortality
 juvenile-mortality
 0
 1
-0.64
+0.65
 0.01
 1
 NIL
@@ -432,7 +434,7 @@ natural-chick-mortality
 natural-chick-mortality
 0
 1
-0.22
+0.4
 0.01
 1
 NIL
@@ -477,7 +479,7 @@ starting-juveniles
 starting-juveniles
 0
 500
-100.0
+200.0
 1
 1
 NIL
@@ -548,9 +550,9 @@ PENS
 
 PLOT
 1045
-245
-1450
-480
+270
+1470
+500
 Number of turtles by lifestage
 Number of Turtles
 Ticks
@@ -567,9 +569,9 @@ PENS
 
 PLOT
 1045
-490
-1450
-730
+510
+1470
+740
 Chicks
 Ticks
 Number of Chicks
@@ -625,7 +627,7 @@ nhb-rad
 nhb-rad
 1
 5
-1.0
+4.0
 1
 1
 NIL
@@ -634,8 +636,8 @@ HORIZONTAL
 PLOT
 1045
 35
-1455
-230
+1470
+265
 Colony counts
 Ticks
 Number of Individuals
@@ -659,7 +661,7 @@ max-age
 max-age
 0
 100
-24.0
+28.0
 1
 1
 NIL
@@ -707,7 +709,7 @@ prop-returning-breeders
 prop-returning-breeders
 0
 1
-0.92
+0.95
 0.01
 1
 NIL
@@ -722,7 +724,7 @@ mortality-sd
 mortality-sd
 0
 2
-0.22
+0.2
 0.01
 1
 NIL
@@ -737,7 +739,7 @@ prop-suitable
 prop-suitable
 0
 1
-0.48
+0.5
 0.01
 1
 NIL
@@ -752,7 +754,7 @@ habitat-aggregation
 habitat-aggregation
 0
 1
-0.18
+0.2
 0.01
 1
 NIL
@@ -767,7 +769,7 @@ high-lambda
 high-lambda
 0
 100
-68.0
+90.0
 1
 1
 NIL
@@ -782,7 +784,7 @@ diffusion-prop
 diffusion-prop
 0
 1
-0.25
+0.3
 0.01
 1
 NIL
@@ -917,10 +919,10 @@ capture-data?
 -1000
 
 SLIDER
-240
-90
-412
-123
+410
+575
+582
+608
 time-to-prospect
 time-to-prospect
 0
@@ -938,7 +940,7 @@ SWITCH
 648
 update-colour?
 update-colour?
-1
+0
 1
 -1000
 
@@ -951,7 +953,7 @@ collapse-half-way
 collapse-half-way
 0
 200
-101.0
+70.0
 1
 1
 NIL
@@ -966,7 +968,7 @@ collapse-perc
 collapse-perc
 0
 1
-0.1
+0.3
 0.01
 1
 NIL
@@ -981,7 +983,7 @@ raft-half-way
 raft-half-way
 0
 500
-200.0
+100.0
 1
 1
 NIL
@@ -1037,8 +1039,8 @@ emigration-curve
 emigration-curve
 0
 2
-1.0
 0.5
+0.025
 1
 NIL
 HORIZONTAL
@@ -1072,20 +1074,20 @@ NIL
 1
 
 CHOOSER
-1560
-490
-1698
-535
+805
+755
+943
+800
 isl-att-curve
 isl-att-curve
 "uniform" "linear" "sigmoid" "beta1" "beta2" "asymptotic"
-3
+2
 
 SLIDER
-940
-765
-1112
-798
+800
+810
+972
+843
 emig-out-prob
 emig-out-prob
 0
@@ -1095,6 +1097,27 @@ emig-out-prob
 1
 NIL
 HORIZONTAL
+
+TEXTBOX
+950
+765
+1100
+791
+beta 1 is symmetric and will not work 
+11
+0.0
+1
+
+INPUTBOX
+1515
+510
+1732
+570
+init-dataset
+NIL
+1
+0
+String
 
 @#$#@#$#@
 ## WHAT IS IT?

@@ -208,10 +208,10 @@ to-report random-sigmoid [ x c1 c2 ]
   report 1 / (1 + (exp((-1 * c1) * (x - c2))))
 end
 
-to-report beta-pdf [x alpha beta] 
-  report ((x ^ (alpha - 1)) * ((1 - x) ^ beta - 1)) / random-beta alpha beta
-  
-end
+to-report dbeta [x a b]
+  report (1 / stats:beta a b) * (x ^ (a - 1)) * ((1 - x) ^ (b - 1))
+end  
+
 
 to-report asymptotic-pdf [ x b1 b2 ] 
   report b1 * (1 - exp (-1 * b2 * x))
