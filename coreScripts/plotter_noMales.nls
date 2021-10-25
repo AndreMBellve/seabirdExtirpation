@@ -1,0 +1,61 @@
+;;Script of reporters for plotting function and census counts
+
+;;Plots for the adult counts
+to init-isl-adult-plot
+  
+  set isl-adult-pen-names []
+  let starting-adult-count []
+ 
+  foreach island-id [ i ->
+    
+    set isl-adult-pen-names lput (word "Island: " i) isl-adult-pen-names 
+    
+    ;;Finding the starting population for a colony
+    let example one-of patches with [ colony-id = i ]
+
+    ;;Updating list for initialising plot
+    set starting-adult-count lput ([ starting-seabird-pop ] of example) starting-adult-count
+    
+  ]
+  
+  isl-adult-plot ;;Plotting by island function
+  
+end
+
+to isl-adult-plot
+  
+  isl-adult-n
+    
+  set-current-plot "Island Adult Counts"  
+  foreach island-id [ i ->
+    
+    ;;Selecting the pen
+    set-current-plot-pen (item i isl-adult-pen-names)
+    ;;Identifying colour
+    let current-colour ((i * 10) + 5) ;;× 10 to change the colour base and +5 to give a colour in the middle of the spectrum
+    ;;Giving it the correct colour
+    set-plot-pen-color current-colour
+    ;;Plotting the count for that pen 
+    plot item i adult-isl-counts
+    
+  ]
+  
+end
+
+
+;;Census counting
+to-report isl-adult-n
+  
+  ;;Initialise the list
+  set adult-isl-counts []
+  
+  foreach island-id [ i ->
+   
+    let isl-i-count count turtles with [ mating? and colony-id = i ]  
+    set adult-isl-counts lput isl-i-count adult-isl-counts
+    
+  ]
+  
+  report adult-isl-counts
+  
+end

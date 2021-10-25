@@ -198,11 +198,11 @@ to burrowing ;;a task solely for males
   ]    
   
   ;;creating a list of patches with males for efficiency when females arrive
-  set lekking-males []
+  set calling-males []
  
-  foreach island-id [n -> 
-    let target-colony item (n - 1) colonies
-    set lekking-males lput (target-colony with [ male-count > 0 ]) lekking-males
+  foreach island-id [i -> 
+    let target-colony item (i - 1) colonies
+    set calling-males lput (target-colony with [ male-count > 0 ]) calling-males
   ] 
   
 end
@@ -263,7 +263,7 @@ to pair
   
   ;;selecting the patch-set of interest to identify potential burrows
   let target-colony [ breeding-ground-id ] of self
-  let potential-burrows item (target-colony - 1) lekking-males ;;-1 because lists start at 0
+  let potential-burrows item (target-colony - 1) calling-males ;;-1 because lists start at 0
   
   ;;debugging
   if debug? [ type "potential-burrows " show count(potential-burrows) ]
@@ -322,9 +322,9 @@ end
 
 to no-vacancy ;;updates a patch-set to remove now full patches
   let target-colony ([ breeding-ground-id ] of self) - 1 ;;which patch-set is needed
-  let male-group item target-colony lekking-males ;;pulling out that patch-set
+  let male-group item target-colony calling-males ;;pulling out that patch-set
   set male-group male-group with [ male-count > 0 ] ;;updating the patch-set
-  set lekking-males replace-item target-colony lekking-males male-group  ;;replacing it in the global patch-set
+  set calling-males replace-item target-colony calling-males male-group  ;;replacing it in the global patch-set
 end
 
 ;;HATCHING-FLEDGING
@@ -340,22 +340,30 @@ to hatching-fledging ;need to ask one in each pair to hatch....
 end
 
 to reproduce [ breeding-birds predation? ]
-
+  
   ifelse predation?
   [
-    let total-mortality chick-predation + natural-chick-mortality
-    let n-breed (binomial count(breeding-birds) (1 - total-mortality))  * random-normal 1 mortality-sd ;Factoring mortality, predation and noise into the hatch success
-    set n-breed round(min(list n-breed count(breeding-birds))) ;preventing cases where more are selected than exist    
-    let successful-breeders n-of n-breed breeding-birds
-    
-    if verbose? [ type "Chicks fledged under predation:" show n-breed ] 
-    
-    ask successful-breeders
-    [
-      set time-since-breed 0
-      hatch-females 1
+    foreach island-id [ i ->
+      
+      let example one-of patches with [ colony-id = i ] 
+      let chick-pred [ chick-predation ] of example
+      
+      let isl-breeding-birds breeding-birds with [ colony-id = i ]
+      
+      let total-mortality chick-pred + natural-chick-mortality
+      let n-breed (binomial count(isl-breeding-birds) (1 - total-mortality))  * random-normal 1 mortality-sd ;Factoring mortality, predation and noise into the hatch success
+      set n-breed round(min(list n-breed count(isl-breeding-birds))) ;preventing cases where more are selected than exist    
+      let successful-breeders n-of n-breed isl-breeding-birds
+      
+      if verbose? [ type "Chicks fledged under predation:" show n-breed ] 
+      
+      ask successful-breeders
       [
-        raise-chick orange
+        set time-since-breed 0
+        hatch-females 1
+        [
+          raise-chick orange
+        ]
       ]
     ]
   ]
@@ -375,7 +383,7 @@ to reproduce [ breeding-birds predation? ]
       ]
     ]
   ]      
-  
+
 end
 
 
@@ -395,16 +403,24 @@ to mortality
   ]
   
   ;Adult predation deaths
-  let adults-at-risk turtles with [ life-stage = "Adult" and predators? ] 
-  let adult-risk-count count adults-at-risk
-  
-  let num-killed (binomial adult-risk-count (adult-mortality + adult-predation))  * random-normal 1 mortality-sd
-  set num-killed round(min(list num-killed adult-risk-count)) 
-  let adult-killed n-of num-killed adults-at-risk
-  
-  ask adult-killed;adult predation
-  [
-    die
+  foreach island-id [ i ->
+    
+    ;;Island specific predation
+    let example one-of patches with [ colony-id = i ] 
+    let adult-pred [ chick-predation ] of example
+    
+    ;;How many birds are at risk
+    let adults-at-risk turtles with [ life-stage = "Adult" and predators? and colony-id = i] 
+    let adult-risk-count count adults-at-risk
+    
+    let num-killed (binomial adult-risk-count (adult-mortality + adult-pred))  * random-normal 1 mortality-sd
+    set num-killed round(min(list num-killed adult-risk-count)) 
+    let adult-killed n-of num-killed adults-at-risk
+    
+    ask adult-killed;adult predation
+    [
+      die
+    ]
   ]
   
   ;senescence of old birds
@@ -423,7 +439,7 @@ end
 ;Moving birds off islands, resetting breeding and mating, then clearing burrow current occupancy 
 to season-reset
 
-    assess-islands ;;updating the attractiveness of islands for the philopatry test
+  assess-islands ;;updating the attractiveness of islands for the philopatry test
   
   ;updating counter as these birds may move on in future seasons
   ask breeders
@@ -597,24 +613,31 @@ end
 
 to collapse
   
-  ;;checking to see if patches collapes
-  ask the-islands 
-  [
-    ;;sigmoid distribution
-    ;;2 is the c1 value controlling curve. This creates a steeper curve to show more a threshold
-    let collapse-prob random-sigmoid occupancy-limit collapse-curve collapse-half-way
+  foreach island-id [ i ->
     
-    ;;debugging
-    if debug? [ show collapse-prob ]
-    
-    if collapse-prob >= random-float 1
+    let example one-of patches with [ colony-id = i ] 
+    let middle-collapse [ collapse-half-way ] of example
+    let extent-collapse [ collapse-perc ] of example
+    ;;checking to see if patches collapes
+    ask the-islands with [ colony-id = i]
     [
-      let n-collapse random-binomial occupancy-limit collapse-perc
       
-      ;;output? - this will be very lengthy....
-      if verbose? [ type "Burrows lost" show n-collapse ]
+      ;;sigmoid distribution
+      ;;2 is the c1 value controlling curve. This creates a steeper curve to show more a threshold
+      let collapse-prob random-sigmoid occupancy-limit 2 middle-collapse
       
-      set occupancy-limit occupancy-limit - n-collapse
+      ;;debugging
+      if debug? [ show collapse-prob ]
+      
+      if collapse-prob >= random-float 1
+      [
+        let n-collapse random-binomial occupancy-limit extent-collapse
+        
+        ;;output? - this will be very lengthy....
+        if verbose? [ type "Burrows lost" show n-collapse ]
+        
+        set occupancy-limit occupancy-limit - n-collapse
+      ]
     ]
   ]
   

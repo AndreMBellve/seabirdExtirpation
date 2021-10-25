@@ -7,20 +7,13 @@ extensions
   ;rnetlogo
 ]
 
-__includes
-[
-  "./helpers/distributions.nls"
-  "./coreScripts/initialisation_noMales.nls"
-  "./coreScripts/withinSeason_noMales.nls"
-  "./coreScripts/plotter_noMales.nls"
-]
-
 globals
 [
-  num-islands ;;A single element list with the number of islands
-  the-islands ;;Patch-set of all the island patches
-  the-sea ;;Patch-set of the sea patches
-  the-shore ;; Island patches that border the sea (currrently unused)
+  num-islands
+
+  the-islands
+  the-sea
+  the-shore
 
   island-id ;;List of ID's for the islands (1 - n; where n is the number of islands); sea is 0.
   colonies ;;list of patchsets for each island
@@ -31,7 +24,7 @@ globals
 
   island-attractiveness ;;weighting for philopatry
 
-  calling-males ;;list of colony patch-sets that contain the patches with male-count > 0
+  lekking-males ;;list of colony patch-sets that contain the patches with male-count > 0
   breeders
   recruits
   new-recruits
@@ -46,9 +39,6 @@ globals
 
   philopatry-out ;;Count of birds who failed a philopatry test each year leaving the system
 
-  ;;Census information
-  adult-isl-counts
-
   demography-series
   demography-year
   island-series
@@ -56,15 +46,10 @@ globals
 
   old-pairs
   new-pairs
-
-  ;;Plotting globals
-  isl-adult-pen-names
-
+  nhb-rad
+  diffusion-prop
   ;;Distribution parameters
   asymp-curve
-
-
-  testxx
 ]
 
 patches-own
@@ -73,6 +58,7 @@ patches-own
   ;;SETUP
   ;;initialisation globals for set up
   colony-id
+  predation
   adult-predation
   chick-predation
   prop-suitable
@@ -84,6 +70,8 @@ patches-own
   collapse-perc
   starting-juveniles
   starting-seabird-pop
+  sex-ratio
+
 
   habitable? ;;whether this is a habitable patch (T/F)
   suitable? ;;classifier for whether the patches are particularly suitable for burrows
@@ -99,13 +87,14 @@ patches-own
 
   predators? ;;whether there are predators in this patch
 
-;  low-k             ;; capacity and
-;  low-value-resource  ;; current level of low value resource
+  low-k             ;; capacity and
+  low-value-resource  ;; current level of low value resource
 
 ;  mh-d
 ;  on-island?
 ;  edge-shell        ;; used by irregular island code
 ]
+
 
 turtles-own
 [
@@ -132,142 +121,417 @@ breed ; convience name
   females female ;female birds
 ]
 
-
 to setup
-
-  clear-all
-  reset-ticks
-
-  ;;Default values for patches
   init-patches
-
-  ;;Reading in the data for the islands and creating them
   init-isl-from-file
-
-  ;;Set up for seabirds
   init-adults
   assign-burrows
   init-juveniles
-
-  ;;Custom plot setups
-  init-by-isl-plots
-
-  set pop-size []
-
 end
 
 
+to init-patches ;;Creating default patches and patch-sets (all values set at value for the sea)
+  set pred-islands no-patches
 
-to go
-
-  while [ count(turtles) > 0 ]
+  ask patches
   [
-    step
+    set habitable? FALSE
+    set suitable? false
+    set colony-id 0
+    set habitat-attrac 0
+    set occupancy 0
+    set occupancy-limit 0
+    set predators? false
+    set pcolor blue
+    set neighbourhood no-patches
   ]
+
 end
 
-to step
 
-  if profiler? [ profiler:start ]
+to init-isl-from-file
 
-  ;;Clearing yearly list
-  set demography-year []
+  ;;carefully - wrap this function to fail gracefully if there is no file that can be loaded.
+  let init-data csv:from-file "/data/simple_islands.csv"
 
-  show "Recruitment"
-  recruit ;;adding new individuals
-  ;; set deomg-yr lput x demog-yr
+  ;;Getting variable names and number of variables
+  let var-names item 0 init-data
+  let var-num length var-names
+  let var-values remove-item 0 init-data
 
-  show "Philopatry check"
-  philopatry-check ;;checking if new recruits are natal ground bound
+  ;;Number of islands
+  set num-islands length var-values
 
-  show "Emigration"
-  emigrate ;;potentially abandoning patches
+  ;Sequence of 1 to number of islands for foreach loop
+  let isl-seq  (range num-islands)
 
-  show "Burrowing"
-  burrowing ;;males spread across patches (multi-nomial draw)
+  ;;Creating island blobs
+  foreach isl-seq [ i ->
 
-  show "Mating"
-  find-mate ;;females find a 'male' and settle down in a patch
+    ;;A subsetted list of the values for this run
+    let isl-values item i var-values
 
-  show "Hatching-Fledging"
-  hatching-fledging ;;this stage includes chick mortality - To do: create data output list for each island
+    ;;How big the island is
+    let isl-area item 0 isl-values
 
-  show "Adult Death"
-  mortality ;;
+    ;;Creating island foundation
+    grow-islands isl-area
 
-  show "Census"
-  census
-  ;;let data (list count turtles count males count )
+    ask patches with [ pcolor = green and colony-id = 0 ]
+    [
+      set colony-id (i + 1)
+    ]
 
-  show "New Year"
-  season-reset
+    let var-seq (range 1 var-num)
 
-  ;;set demog-series lput demog-yr demog-series
+    foreach var-seq [ v ->
 
-  tick
+      ;;The name of the variable
+      let po-name item v var-names
+      ;;The value for the variable
+      let po-val item v isl-values
 
-  if profiler?
+      ;;Concatonating the command for setting island values
+      let cmd (word "set " po-name " " po-val)
+      ask patches with [ colony-id = (i  + 1) ]
+      [
+        run cmd
+      ]
+    ]
+  ]
+  ;;Creating agentsets of patches
+  crt-patchsets
+
+  ;;Creating the habitat
+  init-habitat
+end
+
+to grow-islands [ clust-area ] ;;Creating islands and colonies
+
+  ask one-of patches with [ count patches with [ pcolor = green ] in-radius (clust-area + 1)  = 0 and abs(pycor) > clust-area and abs(pxcor) > clust-area] ;Bouncing off edge of world
   [
-    profiler:stop          ;; stop profiling
-    print profiler:report  ;; view the results
-    profiler:reset         ;; clear the data
+    let cluster patches in-radius clust-area ;creating patch-set of the cluster
+
+    ;;Setting seed patches parameters
+    set pcolor green
+    set habitable? TRUE ;setting this to be desireable habitat for the turtle
+
+    ;;Setting surround patches parameters
+    ask cluster ;expanding the patch as a function of density and user defined area
+    [
+      set pcolor green
+      set habitable? TRUE ;see above for this line and the one below
+    ]
   ]
+
+end
+
+to crt-patchsets
+
+  ;Setting some conviences names
+  set colonies patches with [ colony-id > 0 ] ;the baseline initialisation for cells is 0 (i.e. sea cells are 0)
+  set the-islands patches with [ habitable? ] ;convenience name
+  set island-id sort remove-duplicates [ colony-id ] of the-islands ;;creating a list of island-id's
+  set the-sea patches with [ not habitable? ]
+  set pred-islands patches with [ predators? ]
+  set safe-islands patches with [ habitable? = true and not predators? ]
+
+end
+
+ to init-habitat
+
+  ;Creating habitat heterogeneity and storing the colony patch-sets in a list (colonies)
+  set colonies []
+  foreach island-id [n ->
+    dig-burrows n
+    set colonies lput (patches with [colony-id = n]) colonies
+  ]
+
+  ;Now diffuse surface
+  diffuse occupancy-limit diffusion-prop
+
+  ask patches
+  [
+    set occupancy-limit floor occupancy-limit
+  ]
+
+  ;Removing occupancy limits that shouldn't exist
+  ask the-sea
+  [
+    set occupancy-limit 0
+  ]
+
+
+  ask patches with [ habitable? ]
+  [
+    ifelse nhb-rad <= 1 [set neighbourhood (neighbors with [ habitable? ])][set neighbourhood patches with [ habitable? ] in-radius nhb-rad] ; set neighbourhoods for only island patches
+  ]
+
+  ;;for the colour scale...
+  let min-occ-lim min [ occupancy-limit ] of the-islands
+  let max-occ-lim max [ occupancy-limit ] of the-islands
+
+  ask the-islands
+  [
+    ;;making it prettier
+    set pcolor scale-color green occupancy-limit max-occ-lim min-occ-lim
+
+    ;;initialising habitat attractiveness
+    set maxK max [ occupancy-limit ] of neighbourhood
+    ask the-islands with [ maxK != 0 ] ;defensive in case there are any patches surrounded by 0
+    [
+      set habitat-attrac ( occupancy-limit / maxK ) * 0.3
+    ]
+  ]
+
+end
+
+to dig-burrows [ n ]
+
+  let island-patches patches with [ colony-id = n ] ;looking at only this island
+  let island-size count island-patches ;counting island size for determining suitability
+
+  let example one-of island-patches
+  let prop-suit [prop-suitable] of example
+  let habitat-agg [habitat-aggregation] of example
+  let high-l  [high-lambda] of example
+  let low-l  [low-lambda] of example
+
+  ;; seeds the grid with one patch as suitable
+  ask one-of island-patches [ set suitable? true]
+  let filled 1
+
+  ;; this sequentially fills the grid by selecting patches and making them suitable
+  while [filled <= (prop-suit * island-size)]
+  [
+    ;; if rnd test is less than attract-suitable then an *unsuitable* patch next to a suitable patch is made suitable
+    ifelse random-float 1 <= habitat-agg
+    [
+      ask one-of [ neighbors with [ habitable? ] ] of (island-patches with [suitable?])
+      [
+        if suitable? = false
+        [
+          set suitable? true
+          set filled filled + 1
+        ]
+      ]
+    ]
+
+    ;; otherwise pick a patch at random (this could any neighbouring a suitable patch)
+    ;; if you want to make sure it does not you'd need to use
+    ;; ask one-of patches with [(not suitable?) and (count neighbors with [suitable?] = 0)]
+    [
+      ask one-of island-patches with [habitable? and not suitable?]
+      ;;ask one-of patches with [(not suitable?) and (count neighbors with [suitable?] = 0)]
+      [
+        set suitable? true
+        set filled filled + 1
+      ]
+    ]
+ ]
+
+  ;Now set two different poisson distributions
+  ask island-patches
+  [
+    ifelse suitable?
+    [
+      set occupancy-limit random-poisson high-l
+    ]
+    [
+      set occupancy-limit random-poisson low-l
+    ]
+  ]
+
+
+  set island-attractiveness [] ; initialising
+
+  foreach island-id [ i ->
+    let isl-att round( (1 / max island-id) * 100 )
+    set island-attractiveness lput isl-att island-attractiveness
+  ]
+
+end
+
+to init-adults
+
+  foreach island-id [ n ->
+
+    let example one-of patches with [ colony-id = n ]
+    let isl-n-females [ starting-seabird-pop ] of example
+
+    ;initialising females
+    create-females [ starting-seabird-pop ] of example
+
+    ;initialising basic parameters of birds
+    ask females with [ settled? = 0]
+    [
+      ;set shape "bird side"
+      setxy 0 0 ;making them all start on the left edge of the ma
+      set age 6 + random-poisson 5 ;adding some age variability
+      set size 1
+      set life-stage "Adult"
+      set time-since-breed 0
+
+      set natal-ground-id n
+      set breeding-ground-id n
+      set breeding-grounds patch-set patches with [ colony-id = n ]
+      set burrow no-patches
+
+      set settled? true ;Has not been assigned a colony
+      set breeding? false ;Has not found a patch
+      set mating? false ;Has not found a mate
+    ]
+
+  ]
+
+    ask females
+    [
+      set color orange
+    ]
+
+    set breeders females with [ life-stage = "Adult"]
+
+end
+
+;to assign-colonies
+;
+;  if debug? [ show island-id ]
+;
+;  ask breeders with [not settled?]
+;  [
+;    ;set breeding-ground-id to match a colony-id and that the occupancy is less than the occupancy-limit
+;    let target-grd one-of island-id
+;    set breeding-ground-id target-grd
+;    set natal-ground-id target-grd ;intialising as the breeding-grounds = natal grounds
+;    set settled? true
+;    set breeding-grounds patch-set patches with [ colony-id = target-grd ]
+;    ; if [debug?] [ show "target grd id: " show target-grd ]
+;  ]
+;
+;end
+
+
+to assign-burrows
+
+  ask breeders with [ life-stage = "Adult" and breeding-grounds != no-patches ]
+  [
+    set burrow one-of breeding-grounds with [ occupancy < occupancy-limit ]
+    ;if debug? [ show burrow ]
+  ]
+
+end
+
+to init-juveniles
+
+  foreach island-id [ n ->
+
+    let example one-of patches with [ colony-id = n ]
+    let juvenile-pop [ starting-juveniles ] of example
+
+    create-females juvenile-pop
+    [
+      raise-chick orange
+    ]
+
+    ;;Adding to the recruits agentset
+    set recruits turtles with [ life-stage = "Juvenile"]
+
+    ;;Assigning them to their natal island
+    ask recruits with [ not settled? ]
+    [
+      set breeding-ground-id n
+      set breeding-grounds patch-set patches with [ colony-id = n ]
+      set settled? TRUE
+    ]
+  ]
+
 end
 
 
-to-report patch-occ
-  report [ occupancy ] of patch-here / [ maxK ] of patch-here
+to raise-chick [ colour ]
+
+  set color colour
+
+  set size 1
+  set shape "bird side"
+  set age random 6
+  set settled? false
+  set breeding? false
+  set mating? false
+  set last-breeding-success? false
+  set life-stage "Juvenile"
+  set natal-ground-id colony-id
+  set breeding-ground-id 0
+  set breeding-grounds no-patches
+  set burrow no-patches
+  set time-since-breed 0
+
 end
 
-to-report hab-quality
-  report [ occupancy-limit ] of patch-here / [ maxK ] of patch-here
+
+;to assign-natal-grounds
+;  ask recruits
+;  [
+;    set natal-ground-id one-of island-id ;Assigning a random colony as natal grounds
+;  ]
+;end
+
+to create-data-sheet
+
+  set demography-series ["recruits" "" ]
+
 end
-
-to-report local-occ
-  report (mean[ occupancy ] of neighbourhood) / [ maxK ] of patch-here
-end
-
-
-
-;;; To be added:
-;; Island attractiveness
-;; Data recording - bugs to be worked out...
-;; Better island shapes
-;; Bumping them off the edge
 @#$#@#$#@
 GRAPHICS-WINDOW
-521
-33
-1034
-547
+210
+10
+1022
+823
 -1
 -1
-5.0
+4.0
 1
 10
 1
 1
 1
 0
-0
-0
 1
-0
+1
+1
+-100
+100
+-100
 100
 0
-100
-1
-1
+0
 1
 ticks
 30.0
 
 BUTTON
-150
-35
-214
-68
-Setup
+104
+79
+167
+112
+go
+go\n
+NIL
+1
+T
+OBSERVER
+NIL
+NIL
+NIL
+NIL
+1
+
+BUTTON
+36
+81
+99
+114
+setup
 setup
 NIL
 1
@@ -278,654 +542,6 @@ NIL
 NIL
 NIL
 1
-
-BUTTON
-224
-36
-287
-69
-Go
-go
-NIL
-1
-T
-OBSERVER
-NIL
-NIL
-NIL
-NIL
-1
-
-SLIDER
-10
-285
-182
-318
-female-philopatry
-female-philopatry
-0
-1
-0.95
-0.01
-1
-NIL
-HORIZONTAL
-
-TEXTBOX
-20
-200
-170
-228
-Higher value will skew towards males\n
-11
-0.0
-1
-
-SLIDER
-10
-492
-185
-525
-adult-mortality
-adult-mortality
-0
-1
-0.05
-0.01
-1
-NIL
-HORIZONTAL
-
-SLIDER
-10
-452
-185
-485
-juvenile-mortality
-juvenile-mortality
-0
-1
-0.65
-0.01
-1
-NIL
-HORIZONTAL
-
-SLIDER
-10
-412
-187
-445
-natural-chick-mortality
-natural-chick-mortality
-0
-1
-0.4
-0.01
-1
-NIL
-HORIZONTAL
-
-SLIDER
-219
-307
-391
-340
-age-at-first-breeding
-age-at-first-breeding
-0
-12
-6.0
-1
-1
-NIL
-HORIZONTAL
-
-SLIDER
-219
-350
-391
-383
-age-first-return
-age-first-return
-0
-10
-6.0
-1
-1
-NIL
-HORIZONTAL
-
-SLIDER
-220
-439
-392
-472
-max-tries
-max-tries
-1
-10
-6.0
-1
-1
-NIL
-HORIZONTAL
-
-PLOT
-585
-565
-990
-740
-Proportion mating
-Ticks
-Proportion of Adults Mating
-0.0
-1.0
-0.0
-1.0
-true
-true
-"" ""
-PENS
-"Females" 1.0 0 -1664597 true "" "plot ((count turtles with [ life-stage = \"Adult\" and mating?]) / (count turtles with [ life-stage = \"Adult\" ]))"
-
-PLOT
-1045
-270
-1470
-500
-Number of turtles by lifestage
-Ticks
-Number of Turtles
-0.0
-10.0
-0.0
-10.0
-true
-true
-"" ""
-PENS
-"Adult females" 1.0 0 -7858858 true "" "plot count females with [ life-stage = \"Adult\" ]"
-"Juvenile females" 1.0 0 -3508570 true "" "plot count females with [ life-stage = \"Juvenile\" ]"
-
-PLOT
-1045
-510
-1470
-740
-Chicks
-Ticks
-Number of Chicks
-0.0
-10.0
-0.0
-10.0
-true
-true
-"" ""
-PENS
-"Total" 1.0 0 -16777216 true "" "plot count turtles with [ age = 0 ]"
-
-MONITOR
-1605
-45
-1702
-90
-Mating Females
-count females with [ mating? ]
-0
-1
-11
-
-MONITOR
-1490
-45
-1597
-90
-Breeding Females
-count females with [ breeding? ]
-0
-1
-11
-
-SWITCH
-0
-10
-102
-43
-debug?
-debug?
-1
-1
--1000
-
-SLIDER
-220
-394
-392
-427
-nhb-rad
-nhb-rad
-1
-5
-4.0
-1
-1
-NIL
-HORIZONTAL
-
-PLOT
-1045
-35
-1470
-265
-Safe v.s. Predator
-Ticks
-Number of Individuals
-0.0
-10.0
-0.0
-10.0
-true
-true
-"" ""
-PENS
-"Safe adults" 1.0 0 -14070903 true "" "plot count turtles with [ life-stage = \"Adult\" and [ not predators? ] of burrow = true ]"
-"Predator adults" 1.0 0 -8053223 true "" "plot count turtles with [ life-stage = \"Adult\" and [ predators? ] of burrow = true ]"
-
-SLIDER
-220
-484
-392
-517
-max-age
-max-age
-0
-100
-28.0
-1
-1
-NIL
-HORIZONTAL
-
-PLOT
-1505
-275
-1810
-415
-Age histogram
-Age
-Frequency
-0.0
-40.0
-0.0
-10.0
-true
-false
-"" ""
-PENS
-"default" 1.0 1 -16777216 true "" "histogram [age] of turtles"
-
-SLIDER
-10
-572
-185
-605
-old-mortality
-old-mortality
-0
-1
-0.8
-0.01
-1
-NIL
-HORIZONTAL
-
-SLIDER
-8
-327
-183
-360
-prop-returning-breeders
-prop-returning-breeders
-0
-1
-0.95
-0.01
-1
-NIL
-HORIZONTAL
-
-SLIDER
-220
-529
-392
-562
-mortality-sd
-mortality-sd
-0
-2
-0.2
-0.01
-1
-NIL
-HORIZONTAL
-
-SWITCH
-0
-50
-102
-83
-verbose?
-verbose?
-1
-1
--1000
-
-BUTTON
-300
-35
-363
-68
-Step
-step
-NIL
-1
-T
-OBSERVER
-NIL
-NIL
-NIL
-NIL
-1
-
-MONITOR
-1720
-45
-1882
-90
-Immigrants in predator site
-;count turtles with [ [ predators? ] of burrow = true and breeding-ground-id = natal-ground-id ]
-0
-1
-11
-
-MONITOR
-1735
-90
-1872
-135
-Immigrants in safe site
-;count turtles with [ [ predators? ] of burrow = false and breeding-ground-id = natal-ground-id ]
-0
-1
-11
-
-MONITOR
-1550
-95
-1647
-140
-Seabird counter
-count turtles
-0
-1
-11
-
-SLIDER
-13
-617
-185
-650
-emigration-timer
-emigration-timer
-0
-10
-2.0
-1
-1
-NIL
-HORIZONTAL
-
-SLIDER
-13
-657
-185
-690
-emigration-rate
-emigration-rate
-0
-1
-0.8
-0.01
-1
-NIL
-HORIZONTAL
-
-SWITCH
-0
-90
-103
-123
-profiler?
-profiler?
-1
-1
--1000
-
-SLIDER
-13
-232
-185
-265
-vagrancy
-vagrancy
-0
-0.1
-0.01
-0.01
-1
-NIL
-HORIZONTAL
-
-SWITCH
-0
-125
-120
-158
-capture-data?
-capture-data?
-1
-1
--1000
-
-SWITCH
-215
-110
-352
-143
-update-colour?
-update-colour?
-0
-1
--1000
-
-SLIDER
-195
-585
-367
-618
-raft-half-way
-raft-half-way
-0
-500
-100.0
-1
-1
-NIL
-HORIZONTAL
-
-SLIDER
-195
-625
-367
-658
-emigrant-perc
-emigrant-perc
-0
-1
-0.8
-0.01
-1
-NIL
-HORIZONTAL
-
-SWITCH
-220
-150
-322
-183
-collapse?
-collapse?
-0
-1
--1000
-
-SLIDER
-195
-665
-367
-698
-emigration-curve
-emigration-curve
-0
-2
-0.5
-0.025
-1
-NIL
-HORIZONTAL
-
-SWITCH
-220
-190
-327
-223
-prospect?
-prospect?
-0
-1
--1000
-
-BUTTON
-400
-35
-497
-68
-NIL
-set-defaults
-NIL
-1
-T
-OBSERVER
-NIL
-NIL
-NIL
-NIL
-1
-
-CHOOSER
-390
-595
-528
-640
-isl-att-curve
-isl-att-curve
-"uniform" "linear" "sigmoid" "beta1" "beta2" "asymptotic"
-2
-
-SLIDER
-385
-650
-557
-683
-emig-out-prob
-emig-out-prob
-0
-1
-0.4
-0.05
-1
-NIL
-HORIZONTAL
-
-TEXTBOX
-535
-605
-685
-631
-beta 1 is symmetric and will not work 
-11
-0.0
-1
-
-INPUTBOX
-1510
-505
-1727
-565
-initialisation-data
-/data/simple_islands.csv
-1
-0
-String
-
-SLIDER
-218
-262
-390
-295
-diffusion-prop
-diffusion-prop
-0
-1
-0.3
-0.01
-1
-NIL
-HORIZONTAL
-
-SLIDER
-15
-165
-187
-198
-sex-ratio
-sex-ratio
-0
-1
-0.5
-0.01
-1
-NIL
-HORIZONTAL
-
-PLOT
-1515
-585
-1870
-765
-Island Adult Counts
-Ticks
-Number of Seabirds
-0.0
-10.0
-0.0
-10.0
-true
-false
-"" ""
-PENS
 
 @#$#@#$#@
 ## WHAT IS IT?
@@ -978,12 +594,6 @@ arrow
 true
 0
 Polygon -7500403 true true 150 0 0 150 105 150 105 293 195 293 195 150 300 150
-
-bird side
-false
-0
-Polygon -7500403 true true 0 120 45 90 75 90 105 120 150 120 240 135 285 120 285 135 300 150 240 150 195 165 255 195 210 195 150 210 90 195 60 180 45 135
-Circle -16777216 true false 38 98 14
 
 box
 false
@@ -1292,5 +902,5 @@ true
 Line -7500403 true 150 150 90 180
 Line -7500403 true 150 150 210 180
 @#$#@#$#@
-1
+0
 @#$#@#$#@
