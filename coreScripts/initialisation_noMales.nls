@@ -13,7 +13,7 @@ to set-defaults
   set age-at-first-breeding 6
   set age-first-return 6
   
-  set female-philopatry 0.95
+  set female-philopatry 0.98
   
   set emigration-timer 2
   set emigration-rate 0.8
@@ -59,7 +59,7 @@ to init-patches ;;Creating default patches and patch-sets (all values set at val
     set occupancy 0
     set occupancy-limit 0
     set predators? false
-    set pcolor blue
+    set pcolor 81
     set neighbourhood no-patches
   ]
   
@@ -124,7 +124,12 @@ end
 
 to grow-islands [ clust-area ] ;;Creating islands and colonies
   
-  ask one-of patches with [ count patches with [ pcolor = green ] in-radius (clust-area + 1)  = 0 and abs(pycor) > clust-area and abs(pxcor) > clust-area] ;Bouncing off edge of world
+  let map-max-y max-pycor - clust-area
+  let map-max-x max-pxcor - clust-area
+  let map-min-y min-pycor + clust-area
+  let map-min-x min-pxcor + clust-area 
+  
+  ask one-of patches with [ count patches with [ pcolor = green ] in-radius (clust-area + 1)  = 0 and pycor < map-max-y and pycor > map-min-y and pxcor < map-max-x and pxcor > map-min-x ] ;Bouncing off edge of world
   [
     let cluster patches in-radius clust-area ;creating patch-set of the cluster
     
@@ -401,7 +406,8 @@ end
 
 
 to init-by-isl-plots ;;Setting up plots
-
+  
+  isl-adult-n 
   ;;Adult colony plots
   init-isl-adult-plot ;;Setting up initial plot parameters
 

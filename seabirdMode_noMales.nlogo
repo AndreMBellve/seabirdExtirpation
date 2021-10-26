@@ -45,6 +45,7 @@ globals
   pop-size ;;Total population
 
   philopatry-out ;;Count of birds who failed a philopatry test each year leaving the system
+  emigrators ;;Turtle-set of birds that have chosen to emigrate to a new isl or out of system
 
   ;;Census information
   adult-isl-counts
@@ -263,9 +264,9 @@ ticks
 30.0
 
 BUTTON
-150
+155
 35
-214
+219
 68
 Setup
 setup
@@ -305,7 +306,7 @@ female-philopatry
 female-philopatry
 0
 1
-0.95
+0.98
 0.01
 1
 NIL
@@ -449,9 +450,9 @@ PENS
 "Juvenile females" 1.0 0 -3508570 true "" "plot count females with [ life-stage = \"Juvenile\" ]"
 
 PLOT
-1045
-510
 1470
+515
+1775
 740
 Chicks
 Ticks
@@ -515,10 +516,10 @@ NIL
 HORIZONTAL
 
 PLOT
-1045
-35
-1470
-265
+1050
+515
+1460
+745
 Safe v.s. Predator
 Ticks
 Number of Individuals
@@ -722,7 +723,7 @@ vagrancy
 vagrancy
 0
 0.1
-0.01
+0.0
 0.01
 1
 NIL
@@ -740,10 +741,10 @@ capture-data?
 -1000
 
 SWITCH
-215
-110
-352
-143
+330
+190
+455
+223
 update-colour?
 update-colour?
 0
@@ -842,7 +843,7 @@ CHOOSER
 isl-att-curve
 isl-att-curve
 "uniform" "linear" "sigmoid" "beta1" "beta2" "asymptotic"
-2
+3
 
 SLIDER
 385
@@ -853,27 +854,27 @@ emig-out-prob
 emig-out-prob
 0
 1
-0.4
+0.1
 0.05
 1
 NIL
 HORIZONTAL
 
 TEXTBOX
-535
-605
-685
-631
+395
+565
+545
+591
 beta 1 is symmetric and will not work 
 11
 0.0
 1
 
 INPUTBOX
-1510
-505
-1727
-565
+225
+85
+442
+145
 initialisation-data
 /data/simple_islands.csv
 1
@@ -911,10 +912,10 @@ NIL
 HORIZONTAL
 
 PLOT
-1515
-585
-1870
-765
+1050
+30
+1475
+265
 Island Adult Counts
 Ticks
 Number of Seabirds
@@ -923,8 +924,8 @@ Number of Seabirds
 0.0
 10.0
 true
-false
-"" ""
+true
+"" "isl-adult-plot"
 PENS
 
 @#$#@#$#@

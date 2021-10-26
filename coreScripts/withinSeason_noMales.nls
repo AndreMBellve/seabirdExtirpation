@@ -49,11 +49,16 @@ end
 ;; COLONY CHOICE TO BE OVERHAULED - choice weighting by island attractiveness and potentially have a new group for immigrants who are unable to breed in x consecutive years
 to choose-colony [ birds philopatry ] ;;an agentset of birds who need to choose a colony and the philopatry for that sex
   
+  ;;Setting the count of birds who failed their philopatry check to zero
+  let num-failed 0
+  
   ;;philopatry-out keeps count of the number of birds leaving the system on the basis of philopatry each year
   set philopatry-out 0
   
+  set emigrators nobody
+  
   ;;Checking philopatry by island
-  foreach island-id [n -> 
+  foreach island-id [ n -> 
     
     ;;Subsetting the birds we want to check for
     let isl-birds birds with [ natal-ground-id = n ] 
@@ -73,24 +78,42 @@ to choose-colony [ birds philopatry ] ;;an agentset of birds who need to choose 
       ]
       
       ;;How many birds to allocate
-      let num-failed (count(isl-birds) - num-success) 
+      set num-failed num-failed + (count(isl-birds) - num-success)
       
-      ;;Checking there are some birds to allocate
-      if num-failed > 0 
+      ;;A turtle-set of all possible emigrating birds
+      set emigrators (turtle-set emigrators isl-birds with [ not settled? ])
+      
+    ]
+  ]
+    
+  if verbose?
+  [
+    print (word "Starting emigrators: " emigrators)
+    print (word "Failed Philopatry Count: " num-failed)  
+  ]
+  
+  ;;Checking there are some birds to allocate
+  if num-failed > 0 
       [
         ;;Allocating on basis of island attractiveness (+ chance of leaving system)
         let isl-allocations multinomial-int num-failed island-attractiveness true
         
-        ;;Finding the number of possible options
+        if verbose?
+        [
+          print (word "Island Allocations: " isl-allocations)   
+        ]
+        
+        ;;Finding the number of possible options to separate those going to islands in the system and those leaving
         let num-opt n-values length isl-allocations [ i -> i ]
         
         ;;Running through each island to allocate the correct number of birds - they can end up at natal island as it is assumed they checked out the others before deciding they had it best.
+        ;;THE ABOVE ASSUMPTION MAY CAUSE ISSUES, AS IT WILL LEAD TO A POSTIVE FEEDBACK LOOP, MEANING THE BIRDS ONLY ESCAPE IS EMIGRATION OUTWARD IN SCENARIOS WHERE HIGH DENSITIES ARE FAVOURED....
         foreach num-opt [ o ->
-          ifelse o < max(island-id) - 1 ;;If it is a true island...
+          ifelse o <= max(island-id) - 1 ;;If it is a true island...
           [
-            ask n-of item o isl-allocations isl-birds with [ settled? = false ]
+            ask n-of item o isl-allocations emigrators with [ not settled? ]
             [
-              set breeding-grounds item (o + 1) colonies
+              set breeding-grounds item (o) colonies ;;Plus one because the list is indexed at zero
               set settled? true
               set breeding-ground-id (o + 1)
             ]
@@ -98,18 +121,27 @@ to choose-colony [ birds philopatry ] ;;an agentset of birds who need to choose 
           ;;...or if the count is for emigrating out of the system
           [
             ;;updating the number leaving
-            set philopatry-out philopatry-out + item o isl-allocations
+            set philopatry-out item o isl-allocations
             
-            ;;birds leaving the system
-            ask n-of item o isl-allocations  isl-birds with [ settled? = false ]
+            ;;Checking if any birds are leaving the system
+            if philopatry-out > 0 
             [
-              die          
+              ;;birds leaving the system
+              ask n-of item o isl-allocations emigrators with [ not settled? ] ;;Assumes that the remaining emigrators were all going to be ejected from the system.
+              [
+                die          
+              ]
             ]
           ]
         ]
-      ]
-    ]
+        
+        if verbose?
+        [
+          print (word "Remaining emigrators: " emigrators)   
+        ]
+        
   ]
+  
     
 ;  ask birds
 ;  [
@@ -433,7 +465,11 @@ to mortality
 end
 
 to census
-;Storing data!! To come
+  
+  ;;Storing data!! To come
+  isl-adult-n 
+  ;set island-series lput adult-isl-counts island-series
+ 
 end
 
 ;Moving birds off islands, resetting breeding and mating, then clearing burrow current occupancy 
