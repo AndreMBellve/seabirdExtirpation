@@ -1,5 +1,6 @@
 ;;Script of reporters for plotting function and census counts
 
+;;Adult counts by island
 ;;Plots for the adult counts
 to init-isl-adult-plot
   
@@ -14,7 +15,7 @@ to init-isl-adult-plot
     
   ]
   
-  isl-adult-plot ;;Plotting by island function
+  ;isl-adult-plot ;;Plotting by island function
   
 end
 
@@ -36,8 +37,41 @@ to isl-adult-plot
   
 end
 
+to init-isl-breed-plot
+  
+  set isl-breed-pen-names []
 
-;;Census counting
+  set-current-plot "Island Breeding Attempts"  
+  foreach island-id [ i ->
+    
+    set isl-breed-pen-names lput (word "Island: " i) isl-breed-pen-names
+    create-temporary-plot-pen  item (i - 1) isl-breed-pen-names
+    plotxy 0 0
+    
+  ]
+  
+end
+
+to isl-breed-plot
+    
+  set-current-plot "Island Breeding Attempts"  
+  foreach island-id [ i ->
+    
+    ;;Selecting the pen
+    set-current-plot-pen (item (i - 1) isl-breed-pen-names)
+    ;;Identifying colour
+    let current-colour ((i * 10) + 5) ;;× 10 to change the colour base and +5 to give a colour in the middle of the spectrum
+    ;;Giving it the correct colour
+    set-plot-pen-color current-colour
+    ;;Plotting the count for that pen 
+    plot item (i - 1) breeder-isl-counts
+    
+  ]
+  
+end
+
+
+;;Census counting adults by island
 to isl-adult-n
   
   ;;Initialise the list
@@ -45,9 +79,145 @@ to isl-adult-n
   
   foreach island-id [ i ->
    
-    let isl-i-count count turtles with [ mating? and colony-id = i ]  
+    let isl-i-count count turtles with [ settled? and breeding-ground-id = i ]  
     set adult-isl-counts lput isl-i-count adult-isl-counts
     
   ]
+  
+end
+
+;;Adult counts by island
+;;Plots for the adult counts
+to init-isl-fledge-plot
+  
+  set isl-fledge-pen-names []
+
+  set-current-plot "Chicks Fledged"  
+  foreach island-id [ i ->
+    
+    set isl-fledge-pen-names lput (word "Island: " i) isl-fledge-pen-names 
+    create-temporary-plot-pen  item (i - 1) isl-fledge-pen-names
+    plotxy 0 0
+    
+  ]
+
+end
+
+to isl-fledge-plot
+    
+  set-current-plot "Chicks Fledged"
+  foreach island-id [ i ->
+    
+    ;;Selecting the pen
+    set-current-plot-pen (item (i - 1) isl-fledge-pen-names)
+    ;;Identifying colour
+    let current-colour ((i * 10) + 5) ;;× 10 to change the colour base and +5 to give a colour in the middle of the spectrum
+    ;;Giving it the correct colour
+    set-plot-pen-color current-colour
+    ;;Plotting the count for that pen 
+    plot item (i - 1) fledged-isl-counts
+    
+  ]
+  
+end
+
+
+
+;;Breeder proportions by island
+;;Plots for the adult counts
+to init-isl-mating-plot
+  
+  set isl-mating-pen-names []
+
+  set-current-plot "Proportion Mating"  
+  foreach island-id [ i ->
+    
+    set isl-mating-pen-names lput (word "Island: " i) isl-mating-pen-names 
+    create-temporary-plot-pen  item (i - 1) isl-mating-pen-names
+    plotxy 0 0
+    
+  ]
+  
+  ;isl-mating-plot ;;Plotting by island function
+  
+end
+
+to isl-mating-plot
+    
+  set-current-plot "Proportion Mating"  
+  foreach island-id [ i ->
+    
+    ;;Selecting the pen
+    set-current-plot-pen (item (i - 1) isl-mating-pen-names)
+    ;;Identifying colour
+    let current-colour ((i * 10) + 5) ;;× 10 to change the colour base and +5 to give a colour in the middle of the spectrum
+    ;;Giving it the correct colour
+    set-plot-pen-color current-colour
+    ;;Plotting the count for that pen 
+    plot item (i - 1) mating-isl-props
+    
+  ]
+  
+end
+
+
+;;Census counting
+to isl-mate-prop
+  
+  ;;Initialise the list
+  set mating-isl-props []
+  
+  foreach island-id [ i ->
+   
+    ;;The number of successful mating birds
+    let isl-i-mating count breeders with [ breeding? and mating? and breeding-ground-id = i ]  
+    ;;The number of potential mating birds (a.k.a bachelorettes) 
+    let isl-i-bach count breeders with [ breeding-ground-id = i ]  
+    
+    ifelse isl-i-bach > 0
+    ;;If there are birds...
+    [
+      ;;Finding the proportion
+      let isl-i-prop precision (isl-i-mating / isl-i-bach) 3
+    
+      if verbose? [ print (word "Mating: " isl-i-mating " |  Settled: " isl-i-bach " | Prop: " isl-i-prop) ]
+      ;print (word "Mating: " isl-i-mating " |  Settled: " isl-i-bach " | Prop: " isl-i-prop)
+      ;;Adding it to the list
+      set mating-isl-props lput isl-i-prop mating-isl-props
+    ]
+    ;;else...In the case of there being no birds settled on an island
+    [
+      set mating-isl-props lput 0 mating-isl-props
+    ]
+    
+  ]
+  
+end
+
+
+to-report isl-name-paste [ data-name ]
+  
+  ;creating a empty list to fill
+  let col-names []
+  
+  ;;Creating a unique set of names for those data
+  foreach island-id [ i -> 
+  
+    ;;making names
+    set col-names lput (word data-name "_isl_" i) col-names 
+    
+  ]
+  
+  ;;Spitting them back out
+  report col-names
+  
+end
+
+
+;;Compiling all the census data from each tick
+to-report census-data
+  
+  ;;Compiling list of lists
+    report (sentence juv-live-isl-counts juv-dead-isl-counts new-adult-isl-counts philo-suc-counts philo-fail-counts emig-att emig-source-counts emig-counts male-counts adult-isl-counts breeder-isl-counts fledged-isl-counts adult-mort-isl-counts isl-collapse-counts island-attractiveness) 
   
 end

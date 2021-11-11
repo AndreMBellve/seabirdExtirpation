@@ -22,8 +22,6 @@ to set-defaults
   set emig-out-prob 0.4
   set emigration-curve 0.5
   
-  set vagrancy 0.01
-  
   set prop-returning-breeders 0.95
   
   ;;Mortality effects
@@ -36,14 +34,52 @@ to set-defaults
   set old-mortality 0.8
   
   ;;Island selection
-  set isl-att-curve "sigmoid"
+  set isl-att-curve "beta1"
   
 end
 
 to init-census-data
-  
-  set demography-series []
+
+  ;;By island data
   set island-series []
+  
+  ;;ct = count
+  let variable-names (list "juv_live_ct" "juv_dead_ct" "new_adult_ct" "philo_suc_ct" "philo-fail-ct" "emig-src-ct" "emig_ct" "emig_att" "male_ct" "settled_ct" "mating_ct" "breed_suc_ct" "adult_mort_ct" "isl_collapse_ct" "isl_att" )
+  let n-vars n-values length variable-names [ n -> n]
+  
+  ;;Initialising the header names
+  foreach n-vars [ n -> 
+    
+    ;;Selecting the variable 
+    let var item n variable-names
+    
+    ifelse var = "philo-fail-ct" or var = "emig_att" or var = "emig_ct" or var = "isl_att" ;; these two have one more value than the number of islands (leaving system value)...
+    [
+      
+      ;;Calling reporter to paste variable names by isl-number
+      let isl-var-names isl-name-paste var
+      set isl-var-names lput (word var "_leave_system") isl-var-names
+      
+      ;;Adding names to the list
+      set island-series lput isl-var-names island-series 
+      
+    ]
+    ;;... when they aren't leaving the system
+    [
+      
+      ;;Calling reporter to paste variable names by isl-number
+      let isl-var-names isl-name-paste var
+      
+      ;;Adding names to the list
+      set island-series lput isl-var-names island-series 
+      
+    ]
+  ]
+  
+  ;;Merging to a single list from many
+  set island-series (list reduce sentence island-series)
+  
+  set breeder-isl-counts []
   
 end
 
@@ -62,6 +98,8 @@ to init-patches ;;Creating default patches and patch-sets (all values set at val
     set pcolor 81
     set neighbourhood no-patches
   ]
+  ;;Initialising
+  set emig-out 0 
   
 end
 
@@ -266,11 +304,25 @@ to dig-burrows [ n ]
   
   set island-attractiveness [] ; initialising
   
-  foreach island-id [ i ->   
-    let isl-att round( (1 / max island-id) * 100 )
+  let num-opts (n-values (length island-id) [ i -> i])
+  set num-opts map [ i -> i + 1 ] num-opts 
+  
+  foreach  island-id [ i ->   
+    let isl-att 1 / max island-id
     set island-attractiveness lput isl-att island-attractiveness
   ]
+  
+  ;;...adding a value for emigrating out of the system
+  set island-attractiveness lput emig-out-prob island-attractiveness
     
+  ;;Normalising the values
+  ;;Calculating the total to divide by
+  let total-att sum(island-attractiveness)
+  
+  ;;Normalising to be between 0 and 100
+  set island-attractiveness map [ ta -> round((ta / total-att) * 100) ] island-attractiveness
+  
+  
 end
 
 to init-adults
@@ -292,6 +344,7 @@ to init-adults
       set size 1
       set life-stage "Adult"
       set time-since-breed 0
+      set emigration-attempts 0
       
       set natal-ground-id n
       set breeding-ground-id n
@@ -311,7 +364,7 @@ to init-adults
       set color orange
     ]
     
-    set breeders females with [ life-stage = "Adult"]
+  set breeders females with [ life-stage = "Adult"]
     
 end
 
@@ -387,6 +440,7 @@ to raise-chick [ colour ]
   set breeding-grounds no-patches
   set burrow no-patches
   set time-since-breed 0
+  set emigration-attempts 0
   
 end
 
@@ -409,7 +463,13 @@ to init-by-isl-plots ;;Setting up plots
   
   isl-adult-n 
   ;;Adult colony plots
-  init-isl-adult-plot ;;Setting up initial plot parameters
+  init-isl-adult-plot
+  ;;Number of birds trying to breed
+  init-isl-breed-plot
+  ;;Number of birds fledged
+  init-isl-fledge-plot
+  ;;Number of birds mating by colony
+  init-isl-mating-plot
 
 end
 

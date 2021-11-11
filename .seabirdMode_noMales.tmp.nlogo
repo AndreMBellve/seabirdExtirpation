@@ -298,9 +298,9 @@ ticks
 30.0
 
 BUTTON
-415
+430
 75
-479
+494
 108
 Setup
 setup
@@ -315,9 +315,9 @@ NIL
 1
 
 BUTTON
-415
+430
 115
-478
+493
 148
 Go
 go
@@ -357,9 +357,9 @@ TEXTBOX
 1
 
 SLIDER
-245
+260
 340
-420
+435
 373
 adult-mortality
 adult-mortality
@@ -372,9 +372,9 @@ NIL
 HORIZONTAL
 
 SLIDER
-245
+260
 300
-420
+435
 333
 juvenile-mortality
 juvenile-mortality
@@ -387,9 +387,9 @@ NIL
 HORIZONTAL
 
 SLIDER
-245
 260
-420
+260
+435
 293
 natural-chick-mortality
 natural-chick-mortality
@@ -432,9 +432,9 @@ NIL
 HORIZONTAL
 
 SLIDER
-245
+260
 560
-417
+432
 593
 max-tries
 max-tries
@@ -484,9 +484,9 @@ PENS
 
 PLOT
 1480
-255
+250
 1905
-490
+525
 Chicks
 Ticks
 Number of Chicks
@@ -512,9 +512,9 @@ count breeders with [ mating? ]
 11
 
 SWITCH
-245
+260
 650
-347
+362
 683
 debug?
 debug?
@@ -523,9 +523,9 @@ debug?
 -1000
 
 SLIDER
-245
+260
 520
-417
+432
 553
 nhb-rad
 nhb-rad
@@ -539,9 +539,9 @@ HORIZONTAL
 
 PLOT
 1480
-500
+540
 1905
-700
+740
 Safe v.s. Predator
 Ticks
 Number of Individuals
@@ -557,9 +557,9 @@ PENS
 "Predator adults" 1.0 0 -8053223 true "" "plot count turtles with [ life-stage = \"Adult\" and [ predators? ] of burrow = true ]"
 
 SLIDER
-245
+260
 420
-420
+435
 453
 max-age
 max-age
@@ -590,9 +590,9 @@ PENS
 "default" 1.0 1 -16777216 true "" "histogram [age] of turtles"
 
 SLIDER
-245
+260
 380
-420
+435
 413
 old-mortality
 old-mortality
@@ -620,9 +620,9 @@ NIL
 HORIZONTAL
 
 SLIDER
-245
+260
 220
-417
+432
 253
 mortality-sd
 mortality-sd
@@ -635,9 +635,9 @@ NIL
 HORIZONTAL
 
 SWITCH
-245
+260
 690
-347
+362
 723
 verbose?
 verbose?
@@ -646,9 +646,9 @@ verbose?
 -1000
 
 BUTTON
-415
+430
 155
-478
+493
 188
 Step
 step
@@ -704,9 +704,9 @@ NIL
 HORIZONTAL
 
 SWITCH
-355
+370
 650
-458
+473
 683
 profiler?
 profiler?
@@ -726,9 +726,9 @@ capture-data?
 -1000
 
 SWITCH
-245
+260
 95
-370
+385
 128
 update-colour?
 update-colour?
@@ -767,9 +767,9 @@ NIL
 HORIZONTAL
 
 SWITCH
-245
+260
 15
-347
+362
 48
 collapse?
 collapse?
@@ -793,9 +793,9 @@ NIL
 HORIZONTAL
 
 SWITCH
-245
+260
 55
-352
+367
 88
 prospect?
 prospect?
@@ -804,9 +804,9 @@ prospect?
 -1000
 
 BUTTON
-400
+415
 35
-480
+495
 68
 NIL
 set-defaults
@@ -821,9 +821,9 @@ NIL
 1
 
 CHOOSER
-245
+260
 135
-383
+398
 180
 isl-att-curve
 isl-att-curve
@@ -848,7 +848,7 @@ HORIZONTAL
 INPUTBOX
 10
 30
-205
+227
 90
 initialisation-data
 /data/simple_islands.csv
@@ -1003,9 +1003,9 @@ NIL
 1
 
 TEXTBOX
-245
+260
 630
-345
+360
 656
 Systems checks
 12
@@ -1033,9 +1033,9 @@ Seabird Recruitment\n
 1
 
 TEXTBOX
-245
+260
 205
-395
+410
 223
 Natural Mortality Controls
 12
@@ -1053,9 +1053,9 @@ Emigration Controls
 1
 
 TEXTBOX
-245
+260
 500
-395
+410
 518
 Mate Finding\n
 12
