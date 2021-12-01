@@ -1,0 +1,3 @@
+clust-area,predators?,adult-predation,chick-predation,prop-suitable,low-lambda,high-lambda,habitat-aggregation,time-to-prospect,collapse-half-way,collapse-perc,starting-juveniles,starting-seabird-pop
+10,TRUE,0,0.2,0.25,2,90,0.2,2,50,0.3,0,0
+10,FALSE,0,0,0.25,2,90,0.2,2,50,0.3,2000,4000

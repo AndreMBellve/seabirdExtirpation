@@ -380,7 +380,7 @@ juvenile-mortality
 juvenile-mortality
 0
 1
-0.65
+0.6
 0.01
 1
 NIL
@@ -395,7 +395,7 @@ natural-chick-mortality
 natural-chick-mortality
 0
 1
-0.41
+0.3
 0.01
 1
 NIL
@@ -440,7 +440,7 @@ max-tries
 max-tries
 1
 10
-8.0
+6.0
 1
 1
 NIL
@@ -613,7 +613,7 @@ prop-returning-breeders
 prop-returning-breeders
 0
 1
-1.0
+0.95
 0.01
 1
 NIL
@@ -628,7 +628,7 @@ mortality-sd
 mortality-sd
 0
 2
-0.21
+0.2
 0.01
 1
 NIL
@@ -851,7 +851,7 @@ INPUTBOX
 205
 90
 initialisation-data
-/data/simple_islands.csv
+/data/two_isl_chickpred10.csv
 1
 0
 String

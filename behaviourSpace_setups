@@ -1,0 +1,79 @@
+###Data file names
+
+##Chick predation (simple two island)
+ "/data/twoIsl_chickPred/small/two_isl_chickpred10.csv"
+ "/data/twoIsl_chickPred/small/two_isl_chickpred20.csv"
+ "/data/twoIsl_chickPred/small/two_isl_chickpred30.csv"
+ "/data/twoIsl_chickPred/small/two_isl_chickpred40.csv"
+
+##Behav-space settings
+["prospect?" false]
+["isl-att-curve" "beta2"]
+["collapse?" false]
+["juvenile-mortality" 0.65]
+["prop-returning-breeders" 0.95]
+["sex-ratio" 1]
+["capture-data?" true]
+["diffusion-prop" 0.42]
+["emig-out-prob" 0.8]
+["verbose?" false]
+["raft-half-way" 200]
+["emigration-timer" 3]
+["age-first-return" 6]
+["old-mortality" 0.8]
+["chick-mortality-sd" 0.1]
+["adult-mortality-sd" 0.05]
+["emigration-curve" 0.5]
+["emigration-max-attempts" 2]
+["natural-chick-mortality" 0.35]
+["update-colour?" false]
+["female-philopatry" 0.95]
+["nhb-rad" 4]
+["adult-mortality" 0.05]
+["initialisation-data" "/data/twoIsl_chickPred/small/two_isl_chickpred10.csv" "/data/twoIsl_chickPred/small/two_isl_chickpred20.csv" "/data/twoIsl_chickPred/small/two_isl_chickpred30.csv" "/data/twoIsl_chickPred/small/two_isl_chickpred40.csv"]
+["max-tries" 4]
+["max-age" 28]
+["debug?" false]
+["profiler?" false]
+["age-at-first-breeding" 6]
+
+
+
+
+##Recolonisation (simple two island)
+"/data/twoIsl_recolonisation/twoIsl_noPred_uncolonised.csv"
+/data/twoIsl_recolonisation/twoIsl_pred_uncolonised.csv"
+
+##Behav-space settings
+["prospect?" false]
+["isl-att-curve" "beta2"]
+["collapse?" false]
+["juvenile-mortality" 0.65]
+["prop-returning-breeders" 0.95]
+["sex-ratio" 1]
+["capture-data?" true]
+["emigrant-perc" 0.8]
+["diffusion-prop" 0.42]
+["adult-mortality-sd" 0.05]
+["emig-out-prob" 0.6]
+["verbose?" false]
+["emigration-rate" 0.8]
+["raft-half-way" 200]
+["emigration-timer" 3]
+["age-first-return" 6]
+["old-mortality" 0.8]
+["output-file-name" "./output/test.csv"]
+["emigration-curve" 0.5]
+["emigration-max-attempts" 2]
+["natural-chick-mortality" 0.35]
+["update-colour?" false]
+["female-philopatry" 0.95]
+["chick-mortality-sd" 0.1]
+["nhb-rad" 4]
+["adult-mortality" 0.05]
+["initialisation-data" "/data/twoIsl_recolonisation/twoIsl_noPred_uncolonised.csv" "/data/twoIsl_recolonisation/twoIsl_pred_uncolonised.csv"]
+["max-tries" 8]
+["max-age" 28]
+["debug?" false]
+["profiler?" false]
+["age-at-first-breeding" 6]

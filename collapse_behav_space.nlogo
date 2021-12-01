@@ -67,7 +67,9 @@ globals
   adult-isl-counts
   breeder-isl-counts
   fledged-isl-counts
+  chick-isl-pred
   adult-mort-isl-counts
+  adult-isl-pred
   isl-collapse-counts
   isl-attractiveness ;;One longer than # of isls
 
@@ -181,10 +183,10 @@ to setup
   init-by-isl-plots
 
   ;;Initialising column headers for data extraction
-  if capture-data?
-  [
+  ;if capture-data?
+  ;[
    init-census-data
-  ]
+  ;]
 
 
   set pop-size []
@@ -206,7 +208,7 @@ to step
   if profiler? [ profiler:start ]
 
   ;;Clearing yearly list
-  set demography-year []
+  ;set demography-year []
 
   show "Recruitment"
   recruit ;;adding new individuals
@@ -229,10 +231,6 @@ to step
 
   show "Adult Death"
   mortality ;;
-
-  show "Census"
-  census
-  ;;let data (list count turtles count males count )
 
   show "New Year"
   season-reset
@@ -299,9 +297,9 @@ ticks
 
 BUTTON
 430
-75
+15
 494
-108
+48
 Setup
 setup
 NIL
@@ -316,9 +314,9 @@ NIL
 
 BUTTON
 430
-115
+55
 493
-148
+88
 Go
 go
 NIL
@@ -332,35 +330,35 @@ NIL
 1
 
 SLIDER
-10
-255
-182
-288
+15
+295
+187
+328
 female-philopatry
 female-philopatry
 0
 1
-0.98
+0.95
 0.01
 1
 NIL
 HORIZONTAL
 
 TEXTBOX
-10
-370
-185
-426
+15
+410
+190
+466
 1 represents a even sex ration. Higher values give more males\n\n
 11
 0.0
 1
 
 SLIDER
-260
-340
-435
-373
+270
+415
+445
+448
 adult-mortality
 adult-mortality
 0
@@ -372,10 +370,10 @@ NIL
 HORIZONTAL
 
 SLIDER
-260
-300
-435
-333
+270
+255
+445
+288
 juvenile-mortality
 juvenile-mortality
 0
@@ -387,25 +385,25 @@ NIL
 HORIZONTAL
 
 SLIDER
-260
-260
-435
-293
+270
+335
+445
+368
 natural-chick-mortality
 natural-chick-mortality
 0
 1
-0.41
+0.35
 0.01
 1
 NIL
 HORIZONTAL
 
 SLIDER
-10
-175
-182
-208
+15
+255
+187
+288
 age-at-first-breeding
 age-at-first-breeding
 0
@@ -417,30 +415,30 @@ NIL
 HORIZONTAL
 
 SLIDER
-10
+15
 215
-182
+187
 248
 age-first-return
 age-first-return
 0
 10
-6.0
+4.0
 1
 1
 NIL
 HORIZONTAL
 
 SLIDER
-260
-560
-432
-593
+270
+600
+442
+633
 max-tries
 max-tries
 1
 10
-8.0
+6.0
 1
 1
 NIL
@@ -484,9 +482,9 @@ PENS
 
 PLOT
 1480
-250
+255
 1905
-525
+490
 Chicks
 Ticks
 Number of Chicks
@@ -502,9 +500,9 @@ PENS
 
 MONITOR
 500
-710
+705
 597
-755
+750
 Mating Females
 count breeders with [ mating? ]
 0
@@ -512,10 +510,10 @@ count breeders with [ mating? ]
 11
 
 SWITCH
-260
-650
-362
-683
+270
+680
+372
+713
 debug?
 debug?
 1
@@ -523,10 +521,10 @@ debug?
 -1000
 
 SLIDER
-260
-520
-432
-553
+270
+560
+442
+593
 nhb-rad
 nhb-rad
 1
@@ -539,9 +537,9 @@ HORIZONTAL
 
 PLOT
 1480
-540
+500
 1905
-740
+700
 Safe v.s. Predator
 Ticks
 Number of Individuals
@@ -557,10 +555,10 @@ PENS
 "Predator adults" 1.0 0 -8053223 true "" "plot count turtles with [ life-stage = \"Adult\" and [ predators? ] of burrow = true ]"
 
 SLIDER
-260
-420
-435
-453
+270
+495
+445
+528
 max-age
 max-age
 0
@@ -579,7 +577,7 @@ PLOT
 Age histogram
 Age
 Frequency
-0.0
+6.0
 40.0
 0.0
 10.0
@@ -590,55 +588,55 @@ PENS
 "default" 1.0 1 -16777216 true "" "histogram [age] of turtles"
 
 SLIDER
-260
-380
-435
-413
+270
+455
+445
+488
 old-mortality
 old-mortality
 0
 1
-0.8
+0.5
 0.01
 1
 NIL
 HORIZONTAL
 
 SLIDER
-10
+15
+335
+185
+368
+prop-returning-breeders
+prop-returning-breeders
+0
+1
+0.95
+0.01
+1
+NIL
+HORIZONTAL
+
+SLIDER
+270
 295
-180
+442
 328
-prop-returning-breeders
-prop-returning-breeders
-0
-1
-1.0
-0.01
-1
-NIL
-HORIZONTAL
-
-SLIDER
-260
-220
-432
-253
-mortality-sd
-mortality-sd
+chick-mortality-sd
+chick-mortality-sd
 0
 2
-0.21
+0.1
 0.01
 1
 NIL
 HORIZONTAL
 
 SWITCH
-260
-690
-362
-723
+270
+720
+372
+753
 verbose?
 verbose?
 1
@@ -647,9 +645,9 @@ verbose?
 
 BUTTON
 430
-155
+95
 493
-188
+128
 Step
 step
 NIL
@@ -664,9 +662,9 @@ NIL
 
 MONITOR
 500
-660
+655
 597
-705
+700
 # Adults
 count turtles with [ life-stage = \"Adult\" ]
 0
@@ -674,40 +672,25 @@ count turtles with [ life-stage = \"Adult\" ]
 11
 
 SLIDER
-10
-620
-182
-653
+15
+600
+187
+633
 emigration-timer
 emigration-timer
 1
 10
-2.0
+3.0
 1
-1
-NIL
-HORIZONTAL
-
-SLIDER
-10
-660
-182
-693
-emigration-rate
-emigration-rate
-0
-1
-0.8
-0.01
 1
 NIL
 HORIZONTAL
 
 SWITCH
-370
-650
-473
-683
+380
+680
+483
+713
 profiler?
 profiler?
 1
@@ -721,14 +704,14 @@ SWITCH
 578
 capture-data?
 capture-data?
-1
+0
 1
 -1000
 
 SWITCH
-260
+270
 95
-385
+395
 128
 update-colour?
 update-colour?
@@ -737,77 +720,62 @@ update-colour?
 -1000
 
 SLIDER
-10
-460
-182
-493
+15
+480
+187
+513
 raft-half-way
 raft-half-way
 0
 500
-100.0
+200.0
 1
-1
-NIL
-HORIZONTAL
-
-SLIDER
-10
-500
-182
-533
-emigrant-perc
-emigrant-perc
-0
-1
-0.8
-0.01
 1
 NIL
 HORIZONTAL
 
 SWITCH
-260
+270
 15
-362
+372
 48
 collapse?
 collapse?
-0
+1
 1
 -1000
 
 SLIDER
-10
-540
-182
-573
+15
+520
+187
+553
 emigration-curve
 emigration-curve
 0
 2
 0.5
-0.025
+0.25
 1
 NIL
 HORIZONTAL
 
 SWITCH
-260
+270
 55
-367
+377
 88
 prospect?
 prospect?
-0
+1
 1
 -1000
 
 BUTTON
-415
-35
-495
-68
+10
+145
+90
+178
 NIL
 set-defaults
 NIL
@@ -821,25 +789,25 @@ NIL
 1
 
 CHOOSER
-260
+270
 135
-398
+408
 180
 isl-att-curve
 isl-att-curve
 "uniform" "linear" "sigmoid" "beta1" "beta2" "asymptotic"
-3
+4
 
 SLIDER
-10
-580
-182
-613
+15
+560
+187
+593
 emig-out-prob
 emig-out-prob
 0
 1
-0.4
+0.6
 0.05
 1
 NIL
@@ -848,19 +816,19 @@ HORIZONTAL
 INPUTBOX
 10
 30
-227
-90
+250
+95
 initialisation-data
-/data/simple_islands.csv
+./data/twoIsl_chickPred/small/two_isl_chickpred40_adult5.csv
 1
 0
 String
 
 SLIDER
 10
-95
+100
 182
-128
+133
 diffusion-prop
 diffusion-prop
 0
@@ -872,10 +840,10 @@ NIL
 HORIZONTAL
 
 SLIDER
-10
-335
-182
-368
+15
+375
+187
+408
 sex-ratio
 sex-ratio
 0
@@ -905,9 +873,9 @@ PENS
 
 MONITOR
 605
-660
+655
 682
-705
+700
 # Juveniles
 count turtles with [ life-stage = \"Juvenile\" ]
 17
@@ -915,10 +883,10 @@ count turtles with [ life-stage = \"Juvenile\" ]
 11
 
 SLIDER
-10
-700
-180
-733
+15
+640
+185
+673
 emigration-max-attempts
 emigration-max-attempts
 1
@@ -948,9 +916,9 @@ PENS
 
 MONITOR
 605
-710
+705
 762
-755
+750
 Emigrants Leaving System
 emig-out
 17
@@ -1003,10 +971,10 @@ NIL
 1
 
 TEXTBOX
-260
-630
-360
-656
+270
+660
+370
+686
 Systems checks
 12
 0.0
@@ -1016,51 +984,132 @@ TEXTBOX
 10
 10
 160
-26
+28
 System Creation\n
 12
 0.0
 1
 
 TEXTBOX
-10
-160
-160
-178
+15
+200
+165
+218
 Seabird Recruitment\n
 12
 0.0
 1
 
 TEXTBOX
-260
-205
-410
-223
+270
+200
+420
+218
 Natural Mortality Controls
 12
 0.0
 1
 
 TEXTBOX
-10
-440
-160
-458
+15
+460
+165
+478
 Emigration Controls
 12
 0.0
 1
 
 TEXTBOX
-260
-500
-410
-518
+270
+540
+420
+558
 Mate Finding\n
 12
 0.0
 1
+
+SLIDER
+270
+375
+442
+408
+adult-mortality-sd
+adult-mortality-sd
+0
+1
+0.02
+0.01
+1
+NIL
+HORIZONTAL
+
+SLIDER
+15
+825
+187
+858
+emigration-rate
+emigration-rate
+0
+1
+0.8
+0.1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+15
+860
+187
+893
+emigrant-perc
+emigrant-perc
+0
+1
+0.8
+0.1
+1
+NIL
+HORIZONTAL
+
+TEXTBOX
+25
+805
+175
+823
+tbd
+12
+0.0
+1
+
+SLIDER
+270
+215
+442
+248
+juvenile-mortality-sd
+juvenile-mortality-sd
+0
+1
+0.22
+0.01
+1
+NIL
+HORIZONTAL
+
+INPUTBOX
+10
+695
+227
+755
+behav-output-path
+./output/chick_predation/
+1
+0
+String
 
 @#$#@#$#@
 ## WHAT IS IT?
@@ -1415,18 +1464,17 @@ NetLogo 6.2.0
 @#$#@#$#@
 @#$#@#$#@
 <experiments>
-  <experiment name="experiment" repetitions="2" runMetricsEveryStep="false">
-    <setup>setup
-set-defaults</setup>
-    <go>go</go>
-    <timeLimit steps="10"/>
-    <metric>count turtles</metric>
+  <experiment name="recolonisation_pred" repetitions="30" runMetricsEveryStep="false">
+    <setup>setup</setup>
+    <go>step</go>
+    <final>behav-csv</final>
+    <timeLimit steps="300"/>
+    <exitCondition>count turtles = 0</exitCondition>
     <enumeratedValueSet variable="prospect?">
-      <value value="true"/>
       <value value="false"/>
     </enumeratedValueSet>
     <enumeratedValueSet variable="isl-att-curve">
-      <value value="&quot;sigmoid&quot;"/>
+      <value value="&quot;beta2&quot;"/>
     </enumeratedValueSet>
     <enumeratedValueSet variable="collapse?">
       <value value="false"/>
@@ -1435,13 +1483,13 @@ set-defaults</setup>
       <value value="0.65"/>
     </enumeratedValueSet>
     <enumeratedValueSet variable="prop-returning-breeders">
-      <value value="0.9"/>
+      <value value="0.95"/>
     </enumeratedValueSet>
     <enumeratedValueSet variable="sex-ratio">
       <value value="1"/>
     </enumeratedValueSet>
     <enumeratedValueSet variable="capture-data?">
-      <value value="false"/>
+      <value value="true"/>
     </enumeratedValueSet>
     <enumeratedValueSet variable="emigrant-perc">
       <value value="0.8"/>
@@ -1449,29 +1497,32 @@ set-defaults</setup>
     <enumeratedValueSet variable="diffusion-prop">
       <value value="0.42"/>
     </enumeratedValueSet>
-    <enumeratedValueSet variable="emig-out-prob">
-      <value value="0.5"/>
+    <enumeratedValueSet variable="adult-mortality-sd">
+      <value value="0.05"/>
     </enumeratedValueSet>
-    <enumeratedValueSet variable="emigration-rate">
+    <enumeratedValueSet variable="emig-out-prob">
       <value value="0.8"/>
     </enumeratedValueSet>
     <enumeratedValueSet variable="verbose?">
       <value value="false"/>
     </enumeratedValueSet>
+    <enumeratedValueSet variable="emigration-rate">
+      <value value="0.8"/>
+    </enumeratedValueSet>
     <enumeratedValueSet variable="raft-half-way">
-      <value value="100"/>
+      <value value="200"/>
     </enumeratedValueSet>
     <enumeratedValueSet variable="emigration-timer">
-      <value value="2"/>
+      <value value="3"/>
     </enumeratedValueSet>
     <enumeratedValueSet variable="age-first-return">
       <value value="6"/>
     </enumeratedValueSet>
     <enumeratedValueSet variable="old-mortality">
-      <value value="0.76"/>
+      <value value="0.8"/>
     </enumeratedValueSet>
-    <enumeratedValueSet variable="mortality-sd">
-      <value value="0.2"/>
+    <enumeratedValueSet variable="output-file-name">
+      <value value="&quot;./output/test.csv&quot;"/>
     </enumeratedValueSet>
     <enumeratedValueSet variable="emigration-curve">
       <value value="0.5"/>
@@ -1480,20 +1531,25 @@ set-defaults</setup>
       <value value="2"/>
     </enumeratedValueSet>
     <enumeratedValueSet variable="natural-chick-mortality">
-      <value value="0.4"/>
+      <value value="0.35"/>
     </enumeratedValueSet>
     <enumeratedValueSet variable="update-colour?">
-      <value value="true"/>
+      <value value="false"/>
     </enumeratedValueSet>
     <enumeratedValueSet variable="female-philopatry">
-      <value value="0.98"/>
+      <value value="0.95"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="chick-mortality-sd">
+      <value value="0.1"/>
     </enumeratedValueSet>
     <enumeratedValueSet variable="nhb-rad">
       <value value="4"/>
     </enumeratedValueSet>
-    <steppedValueSet variable="adult-mortality" first="0.05" step="0.05" last="0.95"/>
+    <enumeratedValueSet variable="adult-mortality">
+      <value value="0.05"/>
+    </enumeratedValueSet>
     <enumeratedValueSet variable="initialisation-data">
-      <value value="&quot;/data/simple_islands.csv&quot;"/>
+      <value value="&quot;/data/twoIsl_recolonisation/twoIsl_pred20_uncolonised.csv&quot;"/>
     </enumeratedValueSet>
     <enumeratedValueSet variable="max-tries">
       <value value="8"/>
@@ -1508,7 +1564,123 @@ set-defaults</setup>
       <value value="false"/>
     </enumeratedValueSet>
     <enumeratedValueSet variable="age-at-first-breeding">
-      <value value="12"/>
+      <value value="6"/>
+    </enumeratedValueSet>
+  </experiment>
+  <experiment name="two_isl_predation" repetitions="30" runMetricsEveryStep="false">
+    <setup>setup</setup>
+    <go>step</go>
+    <final>behav-csv</final>
+    <timeLimit steps="200"/>
+    <enumeratedValueSet variable="prospect?">
+      <value value="false"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="isl-att-curve">
+      <value value="&quot;beta2&quot;"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="collapse?">
+      <value value="false"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="juvenile-mortality">
+      <value value="0.65"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="prop-returning-breeders">
+      <value value="0.95"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="sex-ratio">
+      <value value="1"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="capture-data?">
+      <value value="true"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="emigrant-perc">
+      <value value="0.8"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="diffusion-prop">
+      <value value="0.42"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="adult-mortality-sd">
+      <value value="0.02"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="emig-out-prob">
+      <value value="0.6"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="verbose?">
+      <value value="false"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="emigration-rate">
+      <value value="0.8"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="raft-half-way">
+      <value value="200"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="emigration-timer">
+      <value value="3"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="age-first-return">
+      <value value="4"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="behav-output-path">
+      <value value="&quot;./output/chick_predation/&quot;"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="old-mortality">
+      <value value="0.8"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="output-file-name">
+      <value value="&quot;./output/test.csv&quot;"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="emigration-curve">
+      <value value="0.5"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="juvenile-mortality-sd">
+      <value value="0.22"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="emigration-max-attempts">
+      <value value="2"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="natural-chick-mortality">
+      <value value="0.35"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="update-colour?">
+      <value value="false"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="female-philopatry">
+      <value value="0.95"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="chick-mortality-sd">
+      <value value="0.1"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="nhb-rad">
+      <value value="4"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="adult-mortality">
+      <value value="0.05"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="initialisation-data">
+      <value value="&quot;./data/twoIsl_chickPred/small/two_isl_chickpred00_adult0.csv&quot;"/>
+      <value value="&quot;./data/twoIsl_chickPred/small/two_isl_chickpred10_adult0.csv&quot;"/>
+      <value value="&quot;./data/twoIsl_chickPred/small/two_isl_chickpred10_adult5.csv&quot;"/>
+      <value value="&quot;./data/twoIsl_chickPred/small/two_isl_chickpred20_adult0.csv&quot;"/>
+      <value value="&quot;./data/twoIsl_chickPred/small/two_isl_chickpred20_adult5.csv&quot;"/>
+      <value value="&quot;./data/twoIsl_chickPred/small/two_isl_chickpred30_adult0.csv&quot;"/>
+      <value value="&quot;./data/twoIsl_chickPred/small/two_isl_chickpred30_adult5.csv&quot;"/>
+      <value value="&quot;./data/twoIsl_chickPred/small/two_isl_chickpred40_adult0.csv&quot;"/>
+      <value value="&quot;./data/twoIsl_chickPred/small/two_isl_chickpred40_adult5.csv&quot;"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="max-tries">
+      <value value="6"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="max-age">
+      <value value="28"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="debug?">
+      <value value="false"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="profiler?">
+      <value value="false"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="age-at-first-breeding">
+      <value value="6"/>
     </enumeratedValueSet>
   </experiment>
 </experiments>

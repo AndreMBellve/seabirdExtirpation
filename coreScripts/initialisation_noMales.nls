@@ -8,6 +8,7 @@ to set-defaults
   
   ;Bird search area
   set nhb-rad 4 ;;Assumed knowledge radius of 450 metres
+  set max-tries 4
   
   ;;Philopatry and Emigration
   set age-at-first-breeding 6
@@ -15,11 +16,10 @@ to set-defaults
   
   set female-philopatry 0.98
   
-  set emigration-timer 2
-  set emigration-rate 0.8
-  set raft-half-way 100
-  set emigrant-perc 0.8
-  set emig-out-prob 0.4
+  set emigration-timer 3
+  set emigration-max-attempts 2
+  set emig-out-prob 0.8
+  set raft-half-way 200
   set emigration-curve 0.5
   
   set prop-returning-breeders 0.95
@@ -28,13 +28,14 @@ to set-defaults
   set natural-chick-mortality 0.4
   set juvenile-mortality 0.65
   set adult-mortality 0.05
-  set mortality-sd 0.2
+  set chick-mortality-sd 0.2
+  set adult-mortality-sd 0.1
   
   set max-age 28
   set old-mortality 0.8
   
   ;;Island selection
-  set isl-att-curve "beta1"
+  set isl-att-curve "beta2"
   
 end
 
@@ -44,7 +45,7 @@ to init-census-data
   set island-series []
   
   ;;ct = count
-  let variable-names (list "juv_live_ct" "juv_dead_ct" "new_adult_ct" "philo_suc_ct" "philo-fail-ct" "emig-src-ct" "emig_ct" "emig_att" "male_ct" "settled_ct" "mating_ct" "breed_suc_ct" "adult_mort_ct" "isl_collapse_ct" "isl_att" )
+  let variable-names (list "juv_live_ct" "juv_dead_ct" "new_adult_ct" "philo_suc_ct" "philo_fail_ct" "emig-src-ct" "emig_ct" "emig_att" "male_ct" "settled_ct" "mating_ct" "breed_suc_ct" "chick_pred" "adult_mort_ct" "adult_pred" "isl_collapse_ct" "isl_att" )
   let n-vars n-values length variable-names [ n -> n]
   
   ;;Initialising the header names
@@ -76,6 +77,11 @@ to init-census-data
     ]
   ]
   
+  ;;Adding run number for behaviour space and the starting datafile
+  set island-series fput (list "run") island-series
+  set island-series lput (list "initialisation-data") island-series
+  
+  
   ;;Merging to a single list from many
   set island-series (list reduce sentence island-series)
   
@@ -106,7 +112,7 @@ end
 to init-isl-from-file
    
   ;;carefully - wrap this function to fail gracefully if there is no file that can be loaded.
-  let init-data csv:from-file initialisation-data ;; "/data/simple_islands.csv"
+  let init-data csv:from-file initialisation-data
 
   ;;Getting variable names and number of variables
   let var-names item 0 init-data
@@ -116,7 +122,7 @@ to init-isl-from-file
   ;;Number of islands
   set num-islands length var-values
   
-  ;Sequence of 1 to number of islands for foreach loop
+  ;Sequence of 1 to number of islands to be run the foreach loop
   let isl-seq  (range num-islands)
   
   ;;Creating island blobs
@@ -368,23 +374,6 @@ to init-adults
     
 end
 
-;to assign-colonies
-;  
-;  if debug? [ show island-id ]
-;  
-;  ask breeders with [not settled?]
-;  [
-;    ;set breeding-ground-id to match a colony-id and that the occupancy is less than the occupancy-limit
-;    let target-grd one-of island-id
-;    set breeding-ground-id target-grd
-;    set natal-ground-id target-grd ;intialising as the breeding-grounds = natal grounds
-;    set settled? true
-;    set breeding-grounds patch-set patches with [ colony-id = target-grd ]
-;    ; if [debug?] [ show "target grd id: " show target-grd ]  
-;  ]
-;  
-;end
-
 
 to assign-burrows
   
@@ -443,21 +432,6 @@ to raise-chick [ colour ]
   set emigration-attempts 0
   
 end
-
-
-;to assign-natal-grounds
-;  ask recruits
-;  [ 
-;    set natal-ground-id one-of island-id ;Assigning a random colony as natal grounds
-;  ]
-;end
-
-to create-data-sheet
-
-  set demography-series ["recruits" "" ] 
-  
-end
-
 
 to init-by-isl-plots ;;Setting up plots
   

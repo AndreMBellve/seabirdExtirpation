@@ -217,7 +217,17 @@ end
 ;;Compiling all the census data from each tick
 to-report census-data
   
+  ;;grabbing Behaviour space run number if present
+  let behave-run behaviorspace-run-number
+  
   ;;Compiling list of lists
-    report (sentence juv-live-isl-counts juv-dead-isl-counts new-adult-isl-counts philo-suc-counts philo-fail-counts emig-att emig-source-counts emig-counts male-counts adult-isl-counts breeder-isl-counts fledged-isl-counts adult-mort-isl-counts isl-collapse-counts island-attractiveness) 
+  report (sentence behave-run juv-live-isl-counts juv-dead-isl-counts new-adult-isl-counts philo-suc-counts philo-fail-counts emig-source-counts emig-counts emig-att male-counts adult-isl-counts breeder-isl-counts fledged-isl-counts chick-isl-pred adult-mort-isl-counts adult-isl-pred isl-collapse-counts island-attractiveness initialisation-data) 
   
 end
+
+to behav-csv  
+  ;;grabbing Behaviour space run number if present
+  let behav-run behaviorspace-run-number
+  let file-name (word behav-output-path behav-run "_run.csv")
+  csv:to-file file-name island-series
+  end
