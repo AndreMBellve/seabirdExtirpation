@@ -34,8 +34,16 @@ to set-defaults
   set max-age 28
   set old-mortality 0.8
   
+  
+  ;;Meta parameters
   ;;Island selection
   set isl-att-curve "beta2"
+  
+  ;;Climate variation in mortality and breeding
+  set enso? true
+  
+  ;;Capture data from model runs
+  set capture-data? true
   
 end
 
@@ -78,8 +86,8 @@ to init-census-data
   ]
   
   ;;Adding run number for behaviour space and the starting datafile
-  set island-series fput (list "run") island-series
-  set island-series lput (list "initialisation-data") island-series
+  set island-series fput (list "run" "enso_state") island-series
+  set island-series lput (list "initialisation_data") island-series
   
   
   ;;Merging to a single list from many
@@ -430,6 +438,23 @@ to raise-chick [ colour ]
   set burrow no-patches
   set time-since-breed 0
   set emigration-attempts 0
+  
+end
+
+to init-enso
+  
+  ;;Defensive check to make sure that the user has correctly defined the ENSO strings
+  carefully [ let check1 read-from-string enso-breed-impact ] [ print (word error-message " please ensure that you have five numeric values between 0 - 1, separated by spaces and wrapped in [] (e.g. [ 0.5 0.2 0.1 0.2 0.5 ])") ]
+  carefully [ let check2 read-from-string enso-adult-mort ] [ print (word error-message " please ensure that you have five numeric values between 0 - 1, separated by spaces and wrapped in [] (e.g. [ 0.5 0.2 0.1 0.2 0.5 ])") ]
+  
+  ;;Starting state is neutral (index starting at 0)
+  set enso-state 2
+ 
+  ;;Reading in the transition matrix for probabilities of state transitions
+  set enso-table csv:from-file "./data/enso/transition_matrix.csv"
+ 
+  ;;Removing the column names from the list for easy and to ensure that indexes line up
+  set enso-matrix remove-item 0 enso-table
   
 end
 

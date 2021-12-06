@@ -221,7 +221,7 @@ to-report census-data
   let behave-run behaviorspace-run-number
   
   ;;Compiling list of lists
-  report (sentence behave-run juv-live-isl-counts juv-dead-isl-counts new-adult-isl-counts philo-suc-counts philo-fail-counts emig-source-counts emig-counts emig-att male-counts adult-isl-counts breeder-isl-counts fledged-isl-counts chick-isl-pred adult-mort-isl-counts adult-isl-pred isl-collapse-counts island-attractiveness initialisation-data) 
+  report (sentence behave-run enso-state juv-live-isl-counts juv-dead-isl-counts new-adult-isl-counts philo-suc-counts philo-fail-counts emig-source-counts emig-counts emig-att male-counts adult-isl-counts breeder-isl-counts fledged-isl-counts chick-isl-pred adult-mort-isl-counts adult-isl-pred isl-collapse-counts island-attractiveness initialisation-data) 
   
 end
 

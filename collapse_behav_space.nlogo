@@ -4,6 +4,7 @@ extensions
   rnd ;;distribution functions
   profiler ;;profiling to detect bottlenecks
   stats ;;beta distribution pdf
+  ;;string ;;String functions
   ;rnetlogo
 ]
 
@@ -41,7 +42,7 @@ globals
   world-occ ;;the number of breeding birds in the world (adult breeders only)
   island-attractiveness ;;weighting for philopatry
 
-  ; set demog lput (list a b c) demog
+  ;;Helpful counts
   adult-pop ;;the total number of adults
   juv-pop ;;the total number ofjuveniles
   pop-size ;;Total population
@@ -49,6 +50,11 @@ globals
   philopatry-out ;;Count of birds who failed a philopatry test each year leaving the system
   philo-emigrators ;;Turtle-set of birds that have chosen to emigrate to a new isl or out of system
   emig-out ;;Count of birds leaving due to inability to breed...
+
+  ;;ENSO parameters
+  enso-table ;;The table that gets read in with it's headers
+  enso-matrix ;;Transition matrix to code for the probability of changing from one state to another
+  enso-state ;;The current ENSO state of the system - currently five states
 
   ;;Census information
   ;;Master list
@@ -179,6 +185,12 @@ to setup
   assign-burrows
   init-juveniles
 
+  ;;Climate variation in mortality and breeding success
+  if enso?
+  [
+    init-enso
+  ]
+
   ;;Custom plot setups
   init-by-isl-plots
 
@@ -192,8 +204,6 @@ to setup
   set pop-size []
 
 end
-
-
 
 to go
 
@@ -269,9 +279,9 @@ end
 ;; Bumping them off the edge
 @#$#@#$#@
 GRAPHICS-WINDOW
-500
+540
 15
-1013
+1053
 529
 -1
 -1
@@ -296,10 +306,10 @@ ticks
 30.0
 
 BUTTON
-430
-15
-494
-48
+275
+25
+339
+58
 Setup
 setup
 NIL
@@ -313,10 +323,10 @@ NIL
 1
 
 BUTTON
-430
-55
-493
-88
+355
+25
+418
+58
 Go
 go
 NIL
@@ -356,9 +366,9 @@ TEXTBOX
 
 SLIDER
 270
-415
+345
 445
-448
+378
 adult-mortality
 adult-mortality
 0
@@ -371,9 +381,9 @@ HORIZONTAL
 
 SLIDER
 270
-255
+185
 445
-288
+218
 juvenile-mortality
 juvenile-mortality
 0
@@ -386,9 +396,9 @@ HORIZONTAL
 
 SLIDER
 270
-335
+265
 445
-368
+298
 natural-chick-mortality
 natural-chick-mortality
 0
@@ -431,9 +441,9 @@ HORIZONTAL
 
 SLIDER
 270
-600
+660
 442
-633
+693
 max-tries
 max-tries
 1
@@ -445,10 +455,10 @@ NIL
 HORIZONTAL
 
 PLOT
-1029
-207
-1464
-377
+1335
+200
+1770
+370
 Proportion Mating
 Ticks
 Proportion
@@ -461,48 +471,11 @@ true
 "" "isl-mating-plot"
 PENS
 
-PLOT
-1480
-15
-1905
-245
-Number of turtles by lifestage
-Ticks
-Number of Turtles
-0.0
-10.0
-0.0
-10.0
-true
-true
-"" ""
-PENS
-"Adult females" 1.0 0 -7858858 true "" "plot count females with [ life-stage = \"Adult\" ]"
-"Juvenile females" 1.0 0 -3508570 true "" "plot count females with [ life-stage = \"Juvenile\" ]"
-
-PLOT
-1480
-255
-1905
-490
-Chicks
-Ticks
-Number of Chicks
-0.0
-10.0
-0.0
-10.0
-true
-true
-"" ""
-PENS
-"Total" 1.0 0 -16777216 true "" "plot count turtles with [ age = 0 ]"
-
 MONITOR
-500
-705
-597
-750
+1060
+70
+1157
+115
 Mating Females
 count breeders with [ mating? ]
 0
@@ -510,10 +483,10 @@ count breeders with [ mating? ]
 11
 
 SWITCH
-270
-680
-372
-713
+1065
+455
+1167
+488
 debug?
 debug?
 1
@@ -522,9 +495,9 @@ debug?
 
 SLIDER
 270
-560
+620
 442
-593
+653
 nhb-rad
 nhb-rad
 1
@@ -535,30 +508,11 @@ nhb-rad
 NIL
 HORIZONTAL
 
-PLOT
-1480
-500
-1905
-700
-Safe v.s. Predator
-Ticks
-Number of Individuals
-0.0
-10.0
-0.0
-10.0
-true
-true
-"" ""
-PENS
-"Safe adults" 1.0 0 -14070903 true "" "plot count turtles with [ life-stage = \"Adult\" and [ not predators? ] of burrow = true ]"
-"Predator adults" 1.0 0 -8053223 true "" "plot count turtles with [ life-stage = \"Adult\" and [ predators? ] of burrow = true ]"
-
 SLIDER
 270
-495
+425
 445
-528
+458
 max-age
 max-age
 0
@@ -570,10 +524,10 @@ NIL
 HORIZONTAL
 
 PLOT
-745
-540
-1010
-700
+1060
+130
+1325
+270
 Age histogram
 Age
 Frequency
@@ -589,9 +543,9 @@ PENS
 
 SLIDER
 270
-455
+385
 445
-488
+418
 old-mortality
 old-mortality
 0
@@ -619,9 +573,9 @@ HORIZONTAL
 
 SLIDER
 270
-295
+225
 442
-328
+258
 chick-mortality-sd
 chick-mortality-sd
 0
@@ -633,10 +587,10 @@ NIL
 HORIZONTAL
 
 SWITCH
-270
-720
-372
-753
+1065
+495
+1167
+528
 verbose?
 verbose?
 1
@@ -644,10 +598,10 @@ verbose?
 -1000
 
 BUTTON
-430
-95
-493
-128
+435
+25
+490
+58
 Step
 step
 NIL
@@ -661,10 +615,10 @@ NIL
 1
 
 MONITOR
-500
-655
-597
-700
+1060
+20
+1157
+65
 # Adults
 count turtles with [ life-stage = \"Adult\" ]
 0
@@ -673,24 +627,24 @@ count turtles with [ life-stage = \"Adult\" ]
 
 SLIDER
 15
-600
+620
 187
-633
+653
 emigration-timer
 emigration-timer
 1
 10
-3.0
+6.0
 1
 1
 NIL
 HORIZONTAL
 
 SWITCH
-380
-680
-483
-713
+1175
+455
+1278
+488
 profiler?
 profiler?
 1
@@ -698,10 +652,10 @@ profiler?
 -1000
 
 SWITCH
-500
-545
-620
-578
+700
+540
+820
+573
 capture-data?
 capture-data?
 0
@@ -709,10 +663,10 @@ capture-data?
 -1000
 
 SWITCH
-270
-95
-395
-128
+1175
+495
+1300
+528
 update-colour?
 update-colour?
 1
@@ -721,9 +675,9 @@ update-colour?
 
 SLIDER
 15
-480
+500
 187
-513
+533
 raft-half-way
 raft-half-way
 0
@@ -735,21 +689,21 @@ NIL
 HORIZONTAL
 
 SWITCH
-270
-15
-372
-48
+545
+580
+635
+613
 collapse?
 collapse?
-1
+0
 1
 -1000
 
 SLIDER
 15
-520
+540
 187
-553
+573
 emigration-curve
 emigration-curve
 0
@@ -761,10 +715,10 @@ NIL
 HORIZONTAL
 
 SWITCH
-270
-55
-377
-88
+545
+620
+652
+653
 prospect?
 prospect?
 1
@@ -772,9 +726,9 @@ prospect?
 -1000
 
 BUTTON
-10
+15
 145
-90
+95
 178
 NIL
 set-defaults
@@ -790,19 +744,19 @@ NIL
 
 CHOOSER
 270
-135
+70
 408
-180
+115
 isl-att-curve
 isl-att-curve
-"uniform" "linear" "sigmoid" "beta1" "beta2" "asymptotic"
-4
+"uniform" "linear" "asymptotic" "sigmoid" "beta1" "beta2"
+5
 
 SLIDER
 15
-560
+580
 187
-593
+613
 emig-out-prob
 emig-out-prob
 0
@@ -814,20 +768,20 @@ NIL
 HORIZONTAL
 
 INPUTBOX
-10
+15
 30
-250
+255
 95
 initialisation-data
-./data/twoIsl_chickPred/small/two_isl_chickpred40_adult5.csv
+./data/simple_islands.csv
 1
 0
 String
 
 SLIDER
-10
+15
 100
-182
+187
 133
 diffusion-prop
 diffusion-prop
@@ -855,10 +809,10 @@ NIL
 HORIZONTAL
 
 PLOT
-1030
-15
-1465
-200
+1336
+8
+1771
+193
 Island Adult Counts
 Ticks
 Number of Seabirds
@@ -872,10 +826,10 @@ true
 PENS
 
 MONITOR
-605
-655
-682
-700
+1170
+20
+1247
+65
 # Juveniles
 count turtles with [ life-stage = \"Juvenile\" ]
 17
@@ -884,9 +838,9 @@ count turtles with [ life-stage = \"Juvenile\" ]
 
 SLIDER
 15
-640
+660
 185
-673
+693
 emigration-max-attempts
 emigration-max-attempts
 1
@@ -898,10 +852,10 @@ NIL
 HORIZONTAL
 
 PLOT
-1030
-560
-1465
-735
+1336
+553
+1771
+728
 Chicks Fledged
 NIL
 NIL
@@ -915,10 +869,10 @@ true
 PENS
 
 MONITOR
-605
-705
-762
-750
+1170
+70
+1327
+115
 Emigrants Leaving System
 emig-out
 17
@@ -926,10 +880,10 @@ emig-out
 11
 
 PLOT
-1030
-385
-1465
-550
+1336
+378
+1771
+543
 Island Breeding Attempts
 Number of Breeders Attempting
 NIL
@@ -943,10 +897,10 @@ true
 PENS
 
 INPUTBOX
-500
-585
-717
-645
+835
+540
+1052
+600
 output-file-name
 ./output/test.csv
 1
@@ -954,10 +908,10 @@ output-file-name
 String
 
 BUTTON
-640
-545
-717
-578
+740
+575
+817
+608
 Save file
 csv:to-file output-file-name island-series
 NIL
@@ -971,19 +925,19 @@ NIL
 1
 
 TEXTBOX
-270
-660
-370
-686
+1065
+435
+1165
+461
 Systems checks
 12
 0.0
 1
 
 TEXTBOX
+15
 10
-10
-160
+165
 28
 System Creation\n
 12
@@ -1002,9 +956,9 @@ Seabird Recruitment\n
 
 TEXTBOX
 270
-200
+130
 420
-218
+148
 Natural Mortality Controls
 12
 0.0
@@ -1012,9 +966,9 @@ Natural Mortality Controls
 
 TEXTBOX
 15
-460
-165
-478
+480
+160
+498
 Emigration Controls
 12
 0.0
@@ -1022,9 +976,9 @@ Emigration Controls
 
 TEXTBOX
 270
-540
+600
 420
-558
+618
 Mate Finding\n
 12
 0.0
@@ -1032,9 +986,9 @@ Mate Finding\n
 
 SLIDER
 270
-375
+305
 442
-408
+338
 adult-mortality-sd
 adult-mortality-sd
 0
@@ -1087,9 +1041,9 @@ tbd
 
 SLIDER
 270
-215
+145
 442
-248
+178
 juvenile-mortality-sd
 juvenile-mortality-sd
 0
@@ -1101,15 +1055,76 @@ NIL
 HORIZONTAL
 
 INPUTBOX
-10
-695
-227
-755
+835
+605
+1052
+665
 behav-output-path
 ./output/chick_predation/
 1
 0
 String
+
+SWITCH
+545
+540
+648
+573
+enso?
+enso?
+0
+1
+-1000
+
+INPUTBOX
+270
+465
+445
+525
+enso-breed-impact
+[0.5 0.2 0 0.2 0.5]
+1
+0
+String
+
+TEXTBOX
+450
+540
+545
+580
+Added ENSO mortality \n(LN LNL N ENL EN)
+11
+0.0
+1
+
+INPUTBOX
+270
+530
+445
+590
+enso-adult-mort
+[0.25 0.1 0 0.1 0.25]
+1
+0
+String
+
+PLOT
+1060
+280
+1325
+425
+ENSO States
+Ticks
+ENSO State
+0.0
+10.0
+0.0
+4.0
+true
+false
+"" ""
+PENS
+"default" 1.0 0 -12345184 true "" "plot enso-state"
 
 @#$#@#$#@
 ## WHAT IS IT?

@@ -550,6 +550,7 @@ to hatching-fledging ;need to ask one in each pair to hatch....
     ;[
     ;  set time-since-breed 0
     ;]
+    ;; The above code leads to all islands surviving regardless of predation... This is currently very broken.
     
     ;;Count for the binomial draw 
     let n-attempted count isl-breeding-birds
@@ -557,6 +558,23 @@ to hatching-fledging ;need to ask one in each pair to hatch....
      
     ;;Creating turtles post fledging
     let total-mortality chick-pred + natural-chick-mortality
+    
+    ;;ENSO variant
+    if enso? 
+    [
+      ;;Reading in the string to select the value I need for the current enso state
+      let enso-bi read-from-string enso-breed-impact
+      ;;Finding the effect of the current ENSO state
+      let enso-mortality item enso-state enso-bi
+      ;;Adding the mortality to the years total
+      set total-mortality total-mortality + enso-mortality
+      ;;Check to ensure mortality doesn't exceed 1
+      if total-mortality > 1
+      [
+        set total-mortality 1
+      ]
+    ]
+    
     let n-breed round((binomial n-attempted (1 - total-mortality))  * random-normal 1 chick-mortality-sd) ;Factoring mortality, predation and noise into the hatch success
     
     ;Preventing cases where more are selected than exist   
@@ -607,6 +625,21 @@ to mortality
     
     ;;Calculating chance of dying
     let death-chance adult-mortality + adult-pred
+    
+    if enso? 
+    [
+      ;;Reading in the string to select the value I need for the current enso state
+      let enso-am read-from-string enso-adult-mort
+      ;;Pulling out the current states adult mortality impact
+      let enso-mort item enso-state enso-am
+      ;;Adding it to the chance of death for the adults
+      set death-chance death-chance + enso-mort
+      ;;Capping death chance at 1 (it should never be this high but for defensive programming...
+      if death-chance > 1
+      [
+        set death-chance 1
+      ]
+    ]
     
     ;;Killing based on binomial draw + noise
     let num-killed round((binomial adult-risk-count death-chance)  * random-normal 1 adult-mortality-sd)
@@ -675,9 +708,16 @@ to season-reset
     update-attract
   ]
   
+  ;;Changing the current state of ENSO if active
+  if enso?
+  [
+    enso-transition
+  ]
+  
+  ;;Assembling census data
   census
     
-   ;; purely for nice visualisations.... probably stupidly expensive
+  ;; purely for nice visualisations.... probably stupidly expensive
   if update-colour?
   [
     
@@ -691,7 +731,7 @@ to season-reset
     ]
   ]
   
-  ;Resetting
+  ;;Resetting turtle location
   ask turtles
   [
     setxy 0 0
@@ -699,6 +739,7 @@ to season-reset
     set mating? false
   ]
   
+  ;;Emptying the island
   ask the-islands
   [
     set occupancy 0
@@ -710,16 +751,16 @@ end
 
 to assess-islands
   
-  ;Clearing the list
+  ;;Clearing the list
   set isl-occ[]
   
-  ;Updating island occupancies
+  ;;Updating island occupancies
   foreach island-id [ n ->
     let target-isl the-islands with [ colony-id = n ]
     set isl-occ lput sum [ occupancy ] of target-isl isl-occ
   ]
  
-  ;; Calculating the occupancy of all the islands
+  ;;Calculating the occupancy of all the islands
   set world-occ sum(isl-occ)
   
   ;;Emptying attractiveness list for recalculation
@@ -886,10 +927,10 @@ to census
   ;;The proportion of adults on each island that are currently mating
   isl-mate-prop
   
-    ;if capture-data?
-  ;[
+  if capture-data?
+  [
     set island-series lput census-data island-series
-  ;]
+  ]
   
  
 end
@@ -907,6 +948,35 @@ to update-attract
   ]
   
 end
+
+;;;This function could almost certainly be written better....
+to enso-transition
+  
+  ;;Extracting the transition probabilities from the matrix
+  let trans-probs item enso-state enso-matrix
+  
+  ;;Multinomial draw for the new state based on current state
+  let state-change multinomial-int 1 trans-probs true
+  
+  ;;A catch for when the ENSO state is state 0 (LN)
+  
+  ;;A list of states by integer...
+  let pos-states n-values 5 [ i -> i ]
+  ;;...which I then multiply by state-change to isolate index and filter to find integer of interest, first extracts the value un-listing it.
+  set enso-state filter [ s -> s > 0 ] (map * state-change pos-states)
+  
+  ;;A check as the above does not produce any values > 0 when the state is 0 (La Nina)
+  ifelse not empty? enso-state
+  [
+    set enso-state first enso-state
+  ]
+  ;...else set it to state 0
+  [
+    set enso-state 0
+  ]
+  
+end
+
 
 
 
