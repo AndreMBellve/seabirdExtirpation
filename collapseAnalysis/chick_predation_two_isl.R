@@ -18,13 +18,13 @@ library(viridis) #Colour scheme
 
 
 #Reading in meta data and cleaning names
-chickPred_meta <- read.csv("./data/chick_predation/collapse_two_isl_predation.csv",
+chickPred_meta <- read.csv("../output/chick_predation/collapse_chick_predation.csv",
                      header = TRUE,
                      skip = 6) %>% 
   clean_names() 
 
 #Run data
-run_filenames <- list.files(path = "./data/chick_predation/",
+run_filenames <- list.files(path = "../output/chick_predation/",
                             pattern = "_run.csv",
                             full.names = TRUE)
 
@@ -86,10 +86,10 @@ ggplot(
   scale_colour_manual(values = seaPal, 
                       name = "Predation") +
   labs(y = "Adults (Count)", x = "Years") +
-  xlim(c(5, 100)) +
+  #xlim(c(5, 100)) +
   geom_line(size = 0.8) +
-  facet_grid(chick_pred_isl_1 ~ adult_pred_isl_1) +
-  theme_minimal() +
+  facet_grid(chick_pred_isl_1 ~ adult_pred_isl_1) #+
+  #theme_minimal() +
   theme(axis.text = element_text(size = 12, colour = "white"),
         axis.title = element_text(size = 14, colour = "white"),
         strip.text = element_text(size = 12, colour = "white"),
@@ -99,8 +99,8 @@ ggplot(
 
 
 #Saving
-ggsave("./graphs/persistance.png",
-       width = 9.9, height = 5.5)
+# ggsave("./graphs/persistance.png",
+#        width = 9.9, height = 5.5)
 
 
 #

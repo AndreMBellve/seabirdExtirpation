@@ -18,13 +18,13 @@ library(wesanderson)
 # Data cleaning -----------------------------------------------------------
 
 #Reading in meta data and cleaning names
-recol_meta <- read.csv("./data/recolonisation/collapse_recolonisation.csv",
+recol_meta <- read.csv("../output/recolonisation/collapse_recolonisation.csv",
                            header = TRUE,
                            skip = 6) %>% 
   clean_names()
 
 #Run data
-run_filenames <- list.files(path = "./data/recolonisation/",
+run_filenames <- list.files(path = "../output/recolonisation/",
                             pattern = "_run.csv",
                             full.names = TRUE)
 
@@ -95,16 +95,16 @@ ggplot(recol_long_df, aes(
   geom_line(size = 0.8) +
   scale_colour_manual(values = seaPal, 
                       name = "Starting Condition") +
-  xlim(c(50, 300)) +
+  #xlim(c(50, 300)) +
   labs(y = "Adults (Count)", x = "Years") +
-  facet_grid(predators~.) +
-  theme_minimal() +
-  theme(axis.text = element_text(size = 12, colour = "white"),
-        axis.title = element_text(size = 14, colour = "white"),
-        strip.text = element_text(size = 12, colour = "white"),
-        legend.text = element_text(size = 12, colour = "white"),
-        legend.title = element_text(size = 14, colour = "white"),
-        panel.grid = element_blank())
+  facet_grid(predators~.) #+
+  #theme_minimal() +
+  # theme(axis.text = element_text(size = 12, colour = "white"),
+  #       axis.title = element_text(size = 14, colour = "white"),
+  #       strip.text = element_text(size = 12, colour = "white"),
+  #       legend.text = element_text(size = 12, colour = "white"),
+  #       legend.title = element_text(size = 14, colour = "white"),
+  #       panel.grid = element_blank())
 #Saving
 ggsave("./graphs/recolonisation.png",
        width = 9.9, height = 5.5)

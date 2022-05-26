@@ -528,7 +528,6 @@ to no-vacancy ;;updates a patch-set to remove now full patches
 end
 
 ;;HATCHING-FLEDGING
-
 to hatching-fledging ;need to ask one in each pair to hatch....
   
   ;;Reseting for census

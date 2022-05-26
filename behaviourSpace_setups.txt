@@ -30,7 +30,7 @@
 ["female-philopatry" 0.95]
 ["nhb-rad" 4]
 ["adult-mortality" 0.05]
-["initialisation-data" "/data/twoIsl_chickPred/small/two_isl_chickpred10.csv" "/data/twoIsl_chickPred/small/two_isl_chickpred20.csv" "/data/twoIsl_chickPred/small/two_isl_chickpred30.csv" "/data/twoIsl_chickPred/small/two_isl_chickpred40.csv"]
+["initialisation-data" "./data/twoIsl_chickPred/small/two_isl_chickpred00_adult0.csv" "./data/twoIsl_chickPred/small/two_isl_chickpred10_adult0.csv" "./data/twoIsl_chickPred/small/two_isl_chickpred10_adult5.csv" "./data/twoIsl_chickPred/small/two_isl_chickpred20_adult0.csv" "./data/twoIsl_chickPred/small/two_isl_chickpred20_adult5.csv" "./data/twoIsl_chickPred/small/two_isl_chickpred30_adult0.csv" "./data/twoIsl_chickPred/small/two_isl_chickpred30_adult5.csv" "./data/twoIsl_chickPred/small/two_isl_chickpred40_adult0.csv" "./data/twoIsl_chickPred/small/two_isl_chickpred40_adult5.csv"]
 ["max-tries" 4]
 ["max-age" 28]
 ["debug?" false]
