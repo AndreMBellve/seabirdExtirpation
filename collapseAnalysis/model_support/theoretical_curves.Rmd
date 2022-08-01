@@ -12,6 +12,7 @@ library(tidyr)
 library(ggplot2)
 library(ggthemes)
 library(wesanderson)
+library(viridis)
 library(scales)
 
 
@@ -34,8 +35,8 @@ theoreticalCurves <- data.frame(n = seq(0.01, 1, by = 0.01)) %>%
   mutate(Distribution = factor(Distribution, levels = c("Uniform", "Linear", "Asymptotic", "Sigmoid", "Beta1", "Beta2")))
 
 #Colour palette (pastel)
-pasPal <- qualitative_hcl(6, palette = "dark2") 
-  
+#pasPal <- qualitative_hcl(6, palette = "dark2") 
+pasPal <- viridis(6)
   
 #Plotting
 ggplot(theoreticalCurves,

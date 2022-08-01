@@ -238,6 +238,7 @@ to emigrate ;;Currently kills off birds once they have reached the threshold for
       set settled? false 
       set breeding-ground-id -1
       set breeding-grounds no-patches
+      set burrow no-patches
       set emigration-attempts emigration-attempts + 1
     ]   
     
@@ -349,6 +350,8 @@ to burrowing ;;a task solely for males
   
   ;;potential-breeders returning
   set returning-breeders n-of (random-binomial count(potential-breeders) prop-returning-breeders) potential-breeders ;actual returning individuals
+  
+  ;;updating the breeders who have are choosing not to breed this round to have their time since breeding reset.
  
   ;;; SHOULD ADD CODE THAT IF A BIRD CHOOSES TO NOT COME BACK TO BREED IT SETS IT'S TIME-SINCE-BREED AT ZERO STILL
   
