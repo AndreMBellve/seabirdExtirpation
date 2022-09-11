@@ -19,7 +19,6 @@ library(viridis) #Colour scheme
 library(wesanderson)
 
 
-
 # Two Island --------------------------------------------------------------
 
 #Creating a list of runs
@@ -40,6 +39,16 @@ twoIsl_df |>
   summarise(runTime = max(ticks)) |> 
   plot()
 
+#Utility function
+#https://stackoverflow.com/questions/52459711/how-to-find-cumulative-variance-or-standard-deviation-in-r
+cumvar <- function (x, sd = FALSE) {
+  x <- x - x[sample.int(length(x), 1)]  ## see Remark 2 below
+  n <- seq_along(x)
+  v <- (cumsum(x ^ 2) - cumsum(x) ^ 2 / n) / (n - 1)
+  if (sd) v <- sqrt(v)
+  v
+}
+
 #Calculating 
 adult_c_df <- twoIsl_df |> 
   #Pivot to long format
@@ -50,7 +59,8 @@ adult_c_df <- twoIsl_df |>
   #filter()
   mutate(line_id = paste(run, island_id)) |> 
   group_by(run, island_id) |> 
-  mutate(adult_mean = cummean(adult_count))#,
+  mutate(adult_mean = cummean(adult_count),
+         adult_sd = cumvar(adult_count, sd = TRUE))
          #adult_sd = rollapply(adult_count, width = 1:800, FUN = sd))
   
 #Plotting
@@ -65,6 +75,13 @@ ggplot(adult_c_df, aes(ticks, adult_count,
 ggplot(adult_c_df, aes(ticks, adult_mean,
                         group = line_id,
                         colour = island_id)) +
+  geom_line(alpha = 0.5) +
+  scale_x_continuous(breaks = seq(0, 800, by = 50)) +
+  theme(axis.text.x = element_text(angle = 45))
+
+ggplot(adult_c_df, aes(ticks, adult_sd,
+                       group = line_id,
+                       colour = island_id)) +
   geom_line(alpha = 0.5) +
   scale_x_continuous(breaks = seq(0, 800, by = 50)) +
   theme(axis.text.x = element_text(angle = 45))

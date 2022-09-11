@@ -8,7 +8,7 @@ to set-defaults
   
   ;Bird search area
   set nhb-rad 4 ;;Assumed knowledge radius of 450 metres
-  set max-tries 4
+  set max-tries 8
   
   ;;Philopatry and Emigration
   set age-at-first-breeding 6
@@ -17,7 +17,7 @@ to set-defaults
   set female-philopatry 0.98
   
   set emigration-timer 3
-  set emigration-max-attempts 2
+  set emigration-max-attempts 6
   set emig-out-prob 0.8
   set raft-half-way 200
   set emigration-curve 0.5
@@ -27,7 +27,7 @@ to set-defaults
   ;;Mortality effects
   set natural-chick-mortality 0.4
   set juvenile-mortality 0.65
-  set adult-mortality 0.05
+  set adult-mortality 0.01
   set chick-mortality-sd 0.2
   set adult-mortality-sd 0.1
   
@@ -53,7 +53,7 @@ to init-census-data
   set island-series []
   
   ;;ct = count
-  let variable-names (list "juv_live_ct" "juv_dead_ct" "new_adult_ct" "philo_suc_ct" "philo_fail_ct" "emig-src-ct" "emig_ct" "emig_att" "male_ct" "settled_ct" "mating_ct" "breed_suc_ct" "chick_pred" "adult_mort_ct" "adult_pred" "isl_collapse_ct" "isl_att" )
+  let variable-names (list "juv_live_ct" "juv_dead_ct" "new_adult_ct" "philo_suc_ct" "philo_fail_ct" "emig_src_ct" "emig_ct" "emig_att" "male_ct" "settled_ct" "mating_ct" "breed_suc_ct" "chick_pred" "adult_mort_ct" "adult_pred" "isl_collapse_ct" "isl_att" )
   let n-vars n-values length variable-names [ n -> n]
   
   ;;Initialising the header names
