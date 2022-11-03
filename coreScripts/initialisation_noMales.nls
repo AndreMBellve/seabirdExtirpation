@@ -1,39 +1,46 @@
 to set-defaults
   
   ;;Meta-model settings
-  set debug? FALSE
-  set verbose? FALSE
-  set profiler? FALSE
-  set capture-data? FALSE
+  set debug? false
+  set verbose? false
+  set profiler? false
+  set update-colour? false
+  
+  ;;Island creation
+  set diffusion-prop 0.4
   
   ;Bird search area
   set nhb-rad 4 ;;Assumed knowledge radius of 450 metres
-  set max-tries 8
+  set max-tries 6
   
   ;;Philopatry and Emigration
+  set age-first-return 5
   set age-at-first-breeding 6
-  set age-first-return 6
-  
+
+  set sex-ratio 1
   set female-philopatry 0.98
-  
-  set emigration-timer 3
-  set emigration-max-attempts 6
-  set emig-out-prob 0.8
-  set raft-half-way 200
-  set emigration-curve 0.5
   
   set prop-returning-breeders 0.95
   
+  set emigration-timer 4
+  set emig-out-prob 0.8
+  set raft-half-way 200
+  set emigration-curve 0.5
+  set emigration-max-attempts 2
+  
+  
   ;;Mortality effects
   set natural-chick-mortality 0.4
+  set chick-mortality-sd 0.1
+  
   set juvenile-mortality 0.65
-  set adult-mortality 0.01
-  set chick-mortality-sd 0.2
-  set adult-mortality-sd 0.1
+  set juvenile-mortality-sd 0.05
+  
+  set adult-mortality 0.05
+  set adult-mortality-sd 0.01
   
   set max-age 28
   set old-mortality 0.8
-  
   
   ;;Meta parameters
   ;;Island selection
@@ -41,14 +48,20 @@ to set-defaults
   
   ;;Climate variation in mortality and breeding
   set enso? true
+  set enso-breed-impact "[0.5 0.2 0 0.2 0.5]"
+  set enso-adult-mort "[0.25 0.1 0 0.1 0.25]"
+  
+  set prospect? true
+  set collapse? true
   
   ;;Capture data from model runs
   set capture-data? true
+  set nlrx? true
   
 end
 
 to init-census-data
-
+  
   ;;By island data
   set island-series []
   
@@ -86,7 +99,7 @@ to init-census-data
   ]
   
   ;;Adding run number for behaviour space and the starting datafile
-  set island-series fput (list "run" "enso_state") island-series
+  set island-series fput (list "run_id" "enso_state") island-series
   set island-series lput (list "initialisation_data") island-series
   
   

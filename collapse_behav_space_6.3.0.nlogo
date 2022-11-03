@@ -174,22 +174,6 @@ to setup
   clear-all
   reset-ticks
 
-  ;;Checking if it is a nlrx run or not as the seed will be set by nlrx if it is
-  if not nlrx?
-   [
-
-  ;;Setting seed specified by user...
-  ifelse is-number? seed-id
-    [
-      random-seed seed-id
-    ]
-    ;;or use a random one if undefined...
-    [
-      set seed-id new-seed
-      random-seed seed-id
-    ]
-
-  ]
   ;;Default values for patches
   init-patches
 
@@ -781,7 +765,7 @@ INPUTBOX
 255
 95
 initialisation-data
-./data/local_sensitivity_analysis/lsa_two_isl_baseline.csv
+data/local_sensitivity_analysis/lsa_two_isl_prosp_u.csv
 1
 0
 String
@@ -1147,17 +1131,6 @@ print-stage?
 1
 -1000
 
-INPUTBOX
-1175
-575
-1295
-635
-seed-id
-2.002269415E9
-1
-0
-Number
-
 @#$#@#$#@
 ## WHAT IS IT?
 
@@ -1506,7 +1479,7 @@ false
 Polygon -7500403 true true 270 75 225 30 30 225 75 270
 Polygon -7500403 true true 30 75 75 30 270 225 225 270
 @#$#@#$#@
-NetLogo 6.2.2
+NetLogo 6.3.0
 @#$#@#$#@
 @#$#@#$#@
 @#$#@#$#@

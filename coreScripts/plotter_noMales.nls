@@ -217,17 +217,49 @@ end
 ;;Compiling all the census data from each tick
 to-report census-data
   
-  ;;grabbing Behaviour space run number if present
-  let behave-run behaviorspace-run-number
+  ;;Initialising the run id to have some number
+  let run-id 1
+  
+  ;;Checking what kind of run this will be (nlrx or behaviour space...)
+  ifelse nlrx? 
+  [
+    ;;If this is a nlrx run, then I will store the nlrx run id, instead of the behaviour run number, so I can keep track of which run corresponds to which.
+    set run-id nlrx-id
+   
+  ]
+  ;;else, just a regular behaviour run
+  [
+    ;;grabbing Behaviour space run number if present
+    set run-id behaviorspace-run-number
+  ]
   
   ;;Compiling list of lists
-  report (sentence behave-run enso-state juv-live-isl-counts juv-dead-isl-counts new-adult-isl-counts philo-suc-counts philo-fail-counts emig-source-counts emig-counts emig-att male-counts adult-isl-counts breeder-isl-counts fledged-isl-counts chick-isl-pred adult-mort-isl-counts adult-isl-pred isl-collapse-counts island-attractiveness initialisation-data) 
+  report (sentence run-id enso-state juv-live-isl-counts juv-dead-isl-counts new-adult-isl-counts philo-suc-counts philo-fail-counts emig-source-counts emig-counts emig-att male-counts adult-isl-counts breeder-isl-counts fledged-isl-counts chick-isl-pred adult-mort-isl-counts adult-isl-pred isl-collapse-counts island-attractiveness initialisation-data) 
   
 end
 
+
 to behav-csv  
-  ;;grabbing Behaviour space run number if present
-  let behav-run behaviorspace-run-number
-  let file-name (word behav-output-path behav-run "_run.csv")
+  
+  ;;Initialising the run id to have some number
+  let run-id 1
+  
+  ;;Checking what kind of run this will be (nlrx or behaviour space...)
+  ifelse nlrx? 
+  [
+    ;;If this is a nlrx run, then I will store the nlrx run id, instead of the behaviour run number, so I can keep track of which run corresponds to which.
+    set run-id nlrx-id
+  ]
+  ;;else, just a regular behaviour run
+  [
+    ;;grabbing Behaviour space run number if present
+    set run-id behaviorspace-run-number
+  ]
+  
+  ;;Making the filename for the data based on the path and the run name
+  let file-name (word behav-output-path run-id "_run.csv")
+  
+  ;;Writing all the stored data to a csv
   csv:to-file file-name island-series
+  
   end

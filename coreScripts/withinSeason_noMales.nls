@@ -468,21 +468,30 @@ to pair
   if any? potential-burrows
   [
     let tries 1 
+      if debug? [
+      print (word "inside loop")
+    ]
     while [ tries < max-tries]
     [
       
       ifelse tries = 1
       [ 
+        ;;Looking at first potential burrow (random selection of burrow from all potentials)
         move-to one-of potential-burrows
       ]
       [
+        ;;All potential burrows from the second
         let alternatives neighbourhood with [ male-count > 0 and occupancy < occupancy-limit  and habitat-attrac >= [ habitat-attrac ] of self ] ;;neighbourhood defined at set up and has a radius defined by slider
         ifelse count(alternatives) > 0 ;;Checking there is a neighbour that meets this definition
         [ 
           move-to one-of alternatives ;;move to potential breeding ground
         ]
         [
-          move-to one-of potential-burrows with [ male-count > 0 and occupancy < occupancy-limit and habitat-attrac >= [ habitat-attrac ] of self ] ;;will move to somewhere more attractive
+          let all-alternatives potential-burrows with [ male-count > 0 and occupancy < occupancy-limit and habitat-attrac >= [ habitat-attrac ] of self ]
+          if any? all-alternatives 
+          [
+            move-to one-of all-alternatives ;;will move to somewhere more attractive
+          ]
         ]
       ]   
       
