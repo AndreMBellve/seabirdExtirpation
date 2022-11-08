@@ -24,8 +24,8 @@ to set-defaults
   
   set emigration-timer 4
   set emig-out-prob 0.8
-  set raft-half-way 200
-  set emigration-curve 0.5
+  set raft-half-way 500
+  set emigration-curve 0.05
   set emigration-max-attempts 2
   
   
@@ -51,8 +51,16 @@ to set-defaults
   set enso-breed-impact "[0.5 0.2 0 0.2 0.5]"
   set enso-adult-mort "[0.25 0.1 0 0.1 0.25]"
   
+  ;;Habitat controls
+  set attrition? true
   set prospect? true
   set collapse? true
+  
+  set burrow-attrition-rate 0.2
+  set patch-burrow-limit 100
+  set collapse-half-way 150
+  set collapse-perc 0.3
+  set collapse-perc-sd 0.05
   
   ;;Capture data from model runs
   set capture-data? true
@@ -66,7 +74,7 @@ to init-census-data
   set island-series []
   
   ;;ct = count
-  let variable-names (list "juv_live_ct" "juv_dead_ct" "new_adult_ct" "philo_suc_ct" "philo_fail_ct" "emig_src_ct" "emig_ct" "emig_att" "male_ct" "settled_ct" "mating_ct" "breed_suc_ct" "chick_pred" "adult_mort_ct" "adult_pred" "isl_collapse_ct" "isl_att" )
+  let variable-names (list "juv_live_ct" "juv_dead_ct" "new_adult_ct" "philo_suc_ct" "philo_fail_ct" "emig_src_ct" "emig_ct" "emig_att" "male_ct" "settled_ct" "mating_ct" "breed_suc_ct" "chick_pred" "adult_mort_ct" "adult_pred" "attrition_ct" "prospect_ct" "collapse_ct" "burrow_ct" "isl_att" )
   let n-vars n-values length variable-names [ n -> n]
   
   ;;Initialising the header names
@@ -482,6 +490,8 @@ to init-by-isl-plots ;;Setting up plots
   init-isl-fledge-plot
   ;;Number of birds mating by colony
   init-isl-mating-plot
+  ;;Counting the number of burrows on each island
+  init-isl-burrow-plot  
 
 end
 

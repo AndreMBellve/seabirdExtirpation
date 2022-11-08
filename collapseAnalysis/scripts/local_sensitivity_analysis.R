@@ -30,65 +30,59 @@ collapse_nl <- nl(nlversion = "6.2.2",
 default_ls <- list(
   #Actual testing variables
   #Island setup controls
-  "initialisation-data" = "\"./data/local_sensitivity_analysis/lsa_two_isl_baseline.csv\"",
+  "initialisation-data" = "\"./data/consistency_analysis/two_isl_baseline.csv\"",
   
-  #Habitat controls
+  #System controls
   "isl-att-curve" = "\"beta2\"",
   "diffusion-prop" = 0.4,
   "nhb-rad" = 4,
   "max-tries" = 6,
   
+  #Habitat controls
+  "burrow-attrition-rate" = 0.2,
+  "patch-burrow-minimum" = 5,
+  
+  "time-to-prospect" = 2,
+  "patch-burrow-limit" = 100,
+  
+  "collapse-half-way" = 150,
+  "collapse-perc" = 0.25,
+  "collapse-perc-sd" = 0.05,
+  
   #Mortality variables
   "natural-chick-mortality" = 0.4,
-  "chick-mortality-sd" = 0.01,
+  "chick-mortality-sd" = 0.1,
   
   "juvenile-mortality" = 0.65,
-  "juvenile-mortality-sd" = 0.05,
+  "juvenile-mortality-sd" = 0.1,
   
   "adult-mortality" = 0.05,
   "adult-mortality-sd" = 0.01,
   
   "enso-breed-impact" = "\"[0.5 0.2 0 0.2 0.5]\"",
-  "enso-adult-mort" = "\"[0.25 0.1 0 0.1 0.25]\"",
+  "enso-adult-mort" = "\"[0.05 0.025 0 0.025 0.05]\"",
   
-  "max-age" = 28,
+  "max-age" = 30,
   "old-mortality" = 0.8,
   
   #Breeding controls
   "sex-ratio" = 1,
   "female-philopatry" = 0.95,
-  "prop-returning-breeders" = 0.95,
-  "age-first-return" = 5,
+  "prop-returning-breeders" = 0.85,
+  #"age-first-return" = 5,
   "age-at-first-breeding" = 6,
   
   #Emigration controls
   "emigration-timer" = 4,
   "emigration-max-attempts" = 2,
-  "emig-out-prob" = 0.8,
+  "emig-out-prob" = 0.75,
   "emigration-curve" = 0.5,
-  "raft-half-way" = 200,
+  "raft-half-way" = 250,
   
   #These are never changed....
   #Data export controls
-  "behav-output-path" = "\"./output/local_sensitivity_analysis/\""#,
-  #"output-file-name" = "\"./output/local_sensitivity_analysis/lsa_two_isl_meta.csv\"",
-  
-  #Hashing these controls out because it caused an error with dplyr which was:
-  # dplyr::bind_rows(res, .id = .id) : 
-  #   Can't combine `..3$update-colour?` <logical> and `..4$update-colour?` <character> - it was the first and may have been caused by R trying to join multiple columns???
-  
-  #"update-colour?" = "false",
-  #"debug?" = "false",
-  #"profiler?" = "false",
-  #"verbose?" = "false",
-  #"nlrx?" = "true",
-  
-  #"capture-data?" = "true",
-  #"prospect?" = "true",
-  #"collapse?" = "true",
-  #"enso?"  = "true"
+  "behav-output-path" = "\"./output/consistency_analysis/\""
 )
-
 
 #Creating a vector of all the initialisation files to be iterated over.
 init_files <- list.files("../data/local_sensitivity_analysis/", full.names = TRUE) %>%
@@ -104,18 +98,30 @@ lsa_ls <- list(
   #Island setup controls
   #init_files is setup outside of the list to pull in all the files from a particular folder to iterate over.
   "initialisation-data" = list(values = init_files),
-  #Habitat controls
+  
+  #System controls
   "isl-att-curve" = list(values = c("\"beta2\"", "\"beta1\"", "\"uniform\"")),
   "diffusion-prop" = list(values = c(0.36, 0.4, 0.44)),
   "nhb-rad" = list(values = c(3, 4, 5)),
   "max-tries" = list(values = c(5, 6, 7)),
   
+  #Habitat controls
+  "burrow-attrition-rate" = list(values = c(0.18, 0.2, 0.22)),
+  "patch-burrow-minimum" = list(values = c(4, 5, 6)),
+  
+  "time-to-prospect" = list(values = c(1, 2, 3)),
+  "patch-burrow-limit" = list(values = c(90, 100, 110)),
+
+  "collapse-half-way" = list(values = c(135, 150, 165)),
+  "collapse-perc" = list(values = c(0.225, 0.25, 0.275)),
+  "collapse-perc-sd" = list(values = c(0.045, 0.05, 0.055)),
+  
   #Mortality variables
   "natural-chick-mortality" = list(values = c(0.36, 0.4, 0.44)),
-  "chick-mortality-sd" = list(values = c(0.009, 0.01, 0.011)),
+  "chick-mortality-sd" = list(values = c(0.09, 0.1, 0.11)),
   
   "juvenile-mortality" = list(values = c(0.585, 0.65, 0.715)),
-  "juvenile-mortality-sd" = list(values = c(0.045, 0.05, 0.055)),
+  "juvenile-mortality-sd" = list(values = c(0.09, 0.1, 0.11)),
   
   "adult-mortality" = list(values = c(0.045, 0.05, 0.055)),
   "adult-mortality-sd" = list(values = c(0.009, 0.01, 0.011)),
@@ -136,34 +142,34 @@ lsa_ls <- list(
   
   "enso-adult-mort" = list(
     values = c(
-      "\"[0.25 0.1 0 0.1 0.25]\"",
-      "\"[0.225 0.1 0 0.1 0.25]\"",
-      "\"[0.25 0.09 0 0.1 0.25]\"",
-      "\"[0.25 0.1 0 0.09 0.25]\"",
-      "\"[0.25 0.1 0 0.1 0.225]\"",
-      "\"[0.275 0.1 0 0.1 0.25]\"",
-      "\"[0.25 0.11 0 0.1 0.25]\"",
-      "\"[0.25 0.1 0 0.11 0.25]\"",
-      "\"[0.25 0.1 0 0.1 0.275]\""
+      "\"[0.05 0.025 0 0.025 0.05]\"",
+      "\"[0.045 0.025 0 0.025 0.05]\"",
+      "\"[0.05 0.0225 0 0.025 0.05]\"",
+      "\"[0.05 0.025 0 0.0225 0.05]\"",
+      "\"[0.05 0.025 0 0.025 0.045]\"",
+      "\"[0.055 0.025 0 0.025 0.05]\"",
+      "\"[0.05 0.0275 0 0.025 0.05]\"",
+      "\"[0.05 0.025 0 0.0275 0.05]\"",
+      "\"[0.05 0.025 0 0.025 0.055]\""
     )
   ),
   
-  "max-age" = list(values = c(25, 28, 31)),
+  "max-age" = list(values = c(27, 30, 33)),
   "old-mortality" = list(values = c(0.72, 0.8, 0.88)),
   
   #Breeding controls
   "sex-ratio" = list(values = c(0.9, 1, 1.1)),
-  "female-philopatry" = list(values = c(0.855, 0.95, 1.045)),
-  "prop-returning-breeders" = list(values = c(0.855, 0.95, 1.045)),
-  "age-first-return" = list(values = c(4, 5, 6)),
+  "female-philopatry" = list(values = c(0.855, 0.95, 1)),
+  "prop-returning-breeders" = list(values = c(0.765, 0.85, 0.935)),
+  #"age-first-return" = list(values = c(4, 5, 6)),
   "age-at-first-breeding" = list(values = c(5, 6, 7)),
   
   #Emigration controls
   "emigration-timer" = list(values = c(3, 4, 5)),
   "emigration-max-attempts" = list(values = c(1, 2, 3)),
-  "emig-out-prob" = list(values = c(0.72, 0.8, 0.88)),
+  "emig-out-prob" = list(values = c(0.65, 0.75, 0.825)),
   "emigration-curve" = list(values = c(0.45, 0.5, 0.55)),
-  "raft-half-way" = list(values = c(180, 200, 220))
+  "raft-half-way" = list(values = c(225, 250, 275))
 )
 
 
@@ -172,13 +178,6 @@ lsa_ls <- list(
 if(any(names(default_ls[1:length(lsa_ls)]) != names(lsa_ls))){
   stop("!!VARIABLE LISTS DO NO MATCH!!")
 }
-
-
-# lsa_ls <- list(
-#   "initialisation-data" = list(values = c("\"./data/local_sensitivity_analysis/lsa_two_isl_prosp_d.csv\"")),
-#   "max-tries" = list(values = c(5, 6, 7)),
-#   "chick-mortality-sd" = list(values = c(0.009, 0.01, 0.011)))
-# #If ^ this is TRUE we have a problem and needs to be checked again!!!
 
 
 # LSA experiment setup ----------------------------------------------------

@@ -195,6 +195,59 @@ to isl-mate-prop
 end
 
 
+;;Plots for the burrow counts
+to init-isl-burrow-plot
+  
+  set isl-burrow-pen-names []
+
+  set-current-plot "Burrow Counts"  
+  foreach island-id [ i ->
+    
+    set isl-burrow-pen-names lput (word "Island: " i) isl-burrow-pen-names 
+    create-temporary-plot-pen  item (i - 1) isl-burrow-pen-names
+    plotxy 0 0
+    
+  ]
+  
+end  
+
+to isl-burrow-plot
+  
+  set-current-plot "Burrow Counts"  
+  foreach island-id [ i ->
+    
+    ;;Selecting the pen
+    set-current-plot-pen (item (i - 1) isl-burrow-pen-names)
+    ;;Identifying colour
+    let current-colour ((i * 10) + 5) ;;× 10 to change the colour base and +5 to give a colour in the middle of the spectrum
+    ;;Giving it the correct colour
+    set-plot-pen-color current-colour
+    ;;Plotting the count for that pen 
+    plot item (i - 1) burrow-counts
+    
+  ]
+  
+end
+
+to isl-burrow-survey
+    
+  ;;Initialise the list
+  set burrow-counts []
+  
+  foreach island-id [ i ->
+  
+    ;;Count how many burrows there are 
+    let isl-i-burrows sum ( [occupancy-limit] of the-islands with [ colony-id = i ] )
+    
+    ;;Update the list
+    set burrow-counts lput isl-i-burrows burrow-counts
+    
+  ]
+  
+end
+
+
+
 to-report isl-name-paste [ data-name ]
   
   ;creating a empty list to fill
@@ -234,7 +287,7 @@ to-report census-data
   ]
   
   ;;Compiling list of lists
-  report (sentence run-id enso-state juv-live-isl-counts juv-dead-isl-counts new-adult-isl-counts philo-suc-counts philo-fail-counts emig-source-counts emig-counts emig-att male-counts adult-isl-counts breeder-isl-counts fledged-isl-counts chick-isl-pred adult-mort-isl-counts adult-isl-pred isl-collapse-counts island-attractiveness initialisation-data) 
+  report (sentence run-id enso-state juv-live-isl-counts juv-dead-isl-counts new-adult-isl-counts philo-suc-counts philo-fail-counts emig-source-counts emig-counts emig-att male-counts adult-isl-counts breeder-isl-counts fledged-isl-counts chick-isl-pred adult-mort-isl-counts adult-isl-pred attrition-counts prospect-counts collapse-counts burrow-counts island-attractiveness initialisation-data) 
   
 end
 

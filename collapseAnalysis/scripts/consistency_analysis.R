@@ -1,6 +1,7 @@
 #Script to automate the consistency analysis for the collapse model
 
 # Simulation Libraries ----------------------------------------------------------------
+
 #Simple data manipulation
 library(dplyr)
 library(stringr) #String tidying for setup file reading
@@ -33,66 +34,62 @@ collapse_nl <- nl(nlversion = "6.2.2",
 default_ls <- list(
   #Actual testing variables
   #Island setup controls
-  "initialisation-data" = "\"./data/local_sensitivity_analysis/lsa_two_isl_baseline.csv\"",
+  "initialisation-data" = "\"./data/consistency_analysis/two_isl_baseline.csv\"",
   
-  #Habitat controls
+  #System controls
   "isl-att-curve" = "\"beta2\"",
   "diffusion-prop" = 0.4,
   "nhb-rad" = 4,
   "max-tries" = 6,
   
+  #Habitat controls
+  "burrow-attrition-rate" = 0.2,
+  "patch-burrow-minimum" = 5,
+  
+  "time-to-prospect" = 2,
+  "patch-burrow-limit" = 100,
+  
+  "collapse-half-way" = 150,
+  "collapse-perc" = 0.25,
+  "collapse-perc-sd" = 0.05,
+  
   #Mortality variables
   "natural-chick-mortality" = 0.4,
-  "chick-mortality-sd" = 0.01,
+  "chick-mortality-sd" = 0.1,
   
   "juvenile-mortality" = 0.65,
-  "juvenile-mortality-sd" = 0.05,
+  "juvenile-mortality-sd" = 0.1,
   
   "adult-mortality" = 0.05,
   "adult-mortality-sd" = 0.01,
   
   "enso-breed-impact" = "\"[0.5 0.2 0 0.2 0.5]\"",
-  "enso-adult-mort" = "\"[0.25 0.1 0 0.1 0.25]\"",
+  "enso-adult-mort" = "\"[0.05 0.025 0 0.025 0.05]\"",
   
-  "max-age" = 28,
+  "max-age" = 30,
   "old-mortality" = 0.8,
   
   #Breeding controls
   "sex-ratio" = 1,
   "female-philopatry" = 0.95,
-  "prop-returning-breeders" = 0.95,
+  "prop-returning-breeders" = 0.85,
   "age-first-return" = 5,
   "age-at-first-breeding" = 6,
   
   #Emigration controls
   "emigration-timer" = 4,
   "emigration-max-attempts" = 2,
-  "emig-out-prob" = 0.8,
+  "emig-out-prob" = 0.75,
   "emigration-curve" = 0.5,
-  "raft-half-way" = 200,
+  "raft-half-way" = 250,
   
   #These are never changed....
   #Data export controls
-  "behav-output-path" = "\"./output/consistency_analysis/\""#,
-  #"output-file-name" = "\"./output/local_sensitivity_analysis/lsa_two_isl_meta.csv\"",
-  
-  #Hashing these controls out because it caused an error with dplyr which was:
-  # dplyr::bind_rows(res, .id = .id) : 
-  #   Can't combine `..3$update-colour?` <logical> and `..4$update-colour?` <character> - it was the first and may have been caused by R trying to join multiple columns???
-  
-  #"update-colour?" = "false",
-  #"debug?" = "false",
-  #"profiler?" = "false",
-  #"verbose?" = "false",
-  #"nlrx?" = "true",
-  
-  #"capture-data?" = "true",
-  #"prospect?" = "true",
-  #"collapse?" = "true",
-  #"enso?"  = "true"
-)
+  "behav-output-path" = "\"./output/consistency_analysis/\""
+  )
 
-# LSA experiment setup ----------------------------------------------------
+
+# Consistency experiment setup ----------------------------------------------------
 #A for loop to iterate over the possible combinations with one variable being moved +/- 10% each time, while all others are held at their default (i.e. best guess)
 
 #Setting up the nlrx experiment
@@ -101,7 +98,7 @@ collapse_nl@experiment <- experiment(
   outpath = outpath,
   repetition = 1,
   tickmetrics = "false",
-  idsetup = c("setup", "set-defaults"),
+  idsetup = c("setup"),
   idgo = "step",
   runtime = 1000,
   evalticks = c(1000),
@@ -142,7 +139,7 @@ toc()
 #Saving the list of model results as an RDS
 #saveRDS(cons_results, "./output/consistency_analysis/cons_results.rds")
 
-#Took approximately 8813.06 seconds (2.45 hours to run)
+#Took approximately 12836.06 seconds (3.55 hours to run)
 
 #Consistency analysis
 
@@ -172,7 +169,7 @@ library(wesanderson)
 #Creating a list of runs
 
 #Reading in files
-twoIsl_df <- list.files("../output/consistency_analysis/", 
+consistency_df <- list.files("../output/consistency_analysis/", 
                         pattern = ".csv",
                         full.names = TRUE) %>%  
   read_csv() %>% 
@@ -182,7 +179,7 @@ twoIsl_df <- list.files("../output/consistency_analysis/",
   mutate(ticks = 1:n())
 
 #Deterimining how long the runs ran for on average
-twoIsl_df %>% 
+consistency_df %>% 
   group_by(run_id) %>% 
   summarise(runTime = max(ticks)) %>%
   summary()
@@ -199,8 +196,8 @@ cumvar <- function (x, sd = FALSE) {
 }
 
 #Calculating 
-adult_c_df <- twoIsl_df %>% 
-  filter(ticks > 50) %>%
+adult_c_df <- consistency_df %>% 
+  #filter(ticks > 50) %>%
   #Pivot to long format
   pivot_longer(cols = starts_with("settled_"),
                names_to = "island_id",
@@ -238,7 +235,7 @@ ggplot() +
                 group = island_id,
                 colour = island_id)) +
   scale_x_continuous(breaks = seq(0, 1000, by = 50)) +
-  theme(axis.text.x = element_text(angle = 45)) + 
+  theme(axis.text.x = element_text(angle = 45))  
   
 
 #Trying to plot the mean/median of each island for the last 50 years
@@ -273,7 +270,7 @@ ggplot(adult_c_df, aes(ticks, adult_sd,
 #Determining the number of replicates needed of a particular parameter set to accurately capture variability.
 #Calculating 
 adult_var_df <- twoIsl_df %>% 
-  filter(ticks == 1000) %>%
+  filter(ticks == 500) %>%
   pivot_longer(cols = starts_with("settled_"),
                names_to = "island_id",
                values_to = "adult_count") %>%
@@ -300,4 +297,20 @@ ggplot(adult_var_df, aes(run_num, adult_sd,
                          colour = island_id)) +
   geom_line(alpha = 0.5) +
   theme(axis.text.x = element_text(angle = 45))
+
+
+
+# Calculating the mean and sd for each island for 450 - 500 years to include in the LSA analysis
+consist_50y_sum <- twoIsl_df %>% 
+  filter(ticks >= 450 & ticks <= 500) %>%
+  #Pivot to long format
+  pivot_longer(cols = starts_with("settled_"),
+               names_to = "island_id",
+               values_to = "adult_count") %>% 
+  group_by(island_id) %>% 
+  summarise(adult_mean = mean(adult_count, na.rm = TRUE),
+         adult_sd = sd(adult_count, na.rm = TRUE)) %>% 
+  ungroup()
+
+consist_50y_sum
 

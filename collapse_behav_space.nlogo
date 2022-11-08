@@ -76,8 +76,13 @@ globals
   chick-isl-pred
   adult-mort-isl-counts
   adult-isl-pred
-  isl-collapse-counts
+  attrition-counts
+  prospect-counts
+  collapse-counts
+  burrow-counts
   isl-attractiveness ;;One longer than # of isls
+
+  lost-males ;;counter for how many unallocated males there are
 
   ;;Reporter for graphs only
   mating-isl-props
@@ -94,12 +99,10 @@ globals
   isl-breed-pen-names
   isl-mating-pen-names
   isl-fledge-pen-names
+  isl-burrow-pen-names
 
   ;;Distribution parameters
   asymp-curve
-
-
-  testxx
 ]
 
 patches-own
@@ -114,9 +117,6 @@ patches-own
   low-lambda
   high-lambda
   habitat-aggregation
-  time-to-prospect
-  collapse-half-way
-  collapse-perc
   starting-juveniles
   starting-seabird-pop
 
@@ -153,6 +153,7 @@ turtles-own
   settled? ;;Whether or not this bird has chosen a breeding ground. Happens once birds recruit and is constant unless an individual has x unsuccessful breeding seasons
   breeding? ;;Whether or not it has found a patch within the colony (reset yearly)
   mating? ;;Whether or not a bird has successfully established a burrow with a 'male' this season
+  return? ;; Logical indicating which birds are returning and which are not - refreshes every season
 
   age ;;numeric counting the age of individuals
   life-stage ;;Juvenile/Adults
@@ -160,6 +161,8 @@ turtles-own
   emigration-attempts ;;How many times they have swapped islands
 
   last-breeding-success? ;;T/F indicating whether their last breeding attempt was successful or unsuccessful
+
+
 
 ]
 
@@ -233,35 +236,30 @@ to step
 
   if profiler? [ profiler:start ]
 
-  ;;Clearing yearly list
-  ;set demography-year []
-
-  show "Recruitment"
+  if print-stage? [ show "Recruitment" ]
   recruit ;;adding new individuals
   ;; set deomg-yr lput x demog-yr
 
-  show "Philopatry check"
+  if print-stage? [ show "Philopatry check" ]
   philopatry-check ;;checking if new recruits are natal ground bound
 
-  show "Emigration"
+  if print-stage? [ show "Emigration" ]
   emigrate ;;potentially abandoning patches
 
-  show "Burrowing"
+ if print-stage? [  show "Burrowing" ]
   burrowing ;;males spread across patches (multi-nomial draw)
 
-  show "Mating"
+  if print-stage? [ show "Mating" ]
   find-mate ;;females find a 'male' and settle down in a patch
 
-  show "Hatching-Fledging"
+  if print-stage? [ show "Hatching-Fledging" ]
   hatching-fledging ;;this stage includes chick mortality - To do: create data output list for each island
 
-  show "Adult Death"
-  mortality ;;
+  if print-stage? [ show "Adult Death" ]
+  mortality ;;Killing off some proportion of the adults
 
-  show "New Year"
+  if print-stage? [ show "New Year" ]
   season-reset
-
-  ;;set demog-series lput demog-yr demog-series
 
   tick
 
@@ -287,9 +285,9 @@ to-report local-occ
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
-540
+665
 15
-1053
+1178
 529
 -1
 -1
@@ -348,35 +346,35 @@ NIL
 1
 
 SLIDER
-15
-295
-187
-328
+20
+290
+192
+323
 female-philopatry
 female-philopatry
 0
 1
-0.98
+0.95
 0.01
 1
 NIL
 HORIZONTAL
 
 TEXTBOX
-15
-410
-190
-466
+20
+405
+195
+461
 1 represents a even sex ration. Higher values give more males\n\n
 11
 0.0
 1
 
 SLIDER
-270
-345
-445
-378
+245
+320
+420
+353
 adult-mortality
 adult-mortality
 0
@@ -388,10 +386,10 @@ NIL
 HORIZONTAL
 
 SLIDER
-270
-185
-445
-218
+245
+160
+420
+193
 juvenile-mortality
 juvenile-mortality
 0
@@ -403,10 +401,10 @@ NIL
 HORIZONTAL
 
 SLIDER
-270
-265
-445
-298
+245
+240
+420
+273
 natural-chick-mortality
 natural-chick-mortality
 0
@@ -418,10 +416,10 @@ NIL
 HORIZONTAL
 
 SLIDER
-15
-255
-187
-288
+20
+250
+192
+283
 age-at-first-breeding
 age-at-first-breeding
 0
@@ -433,10 +431,10 @@ NIL
 HORIZONTAL
 
 SLIDER
-15
-215
-187
-248
+20
+210
+192
+243
 age-first-return
 age-first-return
 0
@@ -448,10 +446,10 @@ NIL
 HORIZONTAL
 
 SLIDER
-270
-660
-442
-693
+20
+730
+192
+763
 max-tries
 max-tries
 1
@@ -463,9 +461,9 @@ NIL
 HORIZONTAL
 
 PLOT
-1335
+1460
 200
-1770
+1895
 370
 Proportion Mating
 Ticks
@@ -480,9 +478,9 @@ true
 PENS
 
 MONITOR
-1060
+1185
 70
-1157
+1282
 115
 Mating Females
 count breeders with [ mating? ]
@@ -491,10 +489,10 @@ count breeders with [ mating? ]
 11
 
 SWITCH
-1065
-455
-1167
-488
+985
+565
+1087
+598
 debug?
 debug?
 1
@@ -502,10 +500,10 @@ debug?
 -1000
 
 SLIDER
-270
-620
-442
-653
+20
+690
+192
+723
 nhb-rad
 nhb-rad
 1
@@ -517,10 +515,10 @@ NIL
 HORIZONTAL
 
 SLIDER
-270
-425
-445
-458
+245
+400
+420
+433
 max-age
 max-age
 0
@@ -532,9 +530,9 @@ NIL
 HORIZONTAL
 
 PLOT
-1060
+1185
 130
-1325
+1450
 270
 Age histogram
 Age
@@ -550,10 +548,10 @@ PENS
 "default" 1.0 1 -16777216 true "" "histogram [age] of turtles"
 
 SLIDER
-270
-385
-445
-418
+245
+440
+420
+473
 old-mortality
 old-mortality
 0
@@ -565,25 +563,25 @@ NIL
 HORIZONTAL
 
 SLIDER
-15
-335
-185
-368
+20
+330
+190
+363
 prop-returning-breeders
 prop-returning-breeders
 0
 1
-0.95
+0.9
 0.01
 1
 NIL
 HORIZONTAL
 
 SLIDER
-270
-225
-442
-258
+245
+280
+417
+313
 chick-mortality-sd
 chick-mortality-sd
 0
@@ -595,10 +593,10 @@ NIL
 HORIZONTAL
 
 SWITCH
-1065
-495
-1167
-528
+985
+605
+1087
+638
 verbose?
 verbose?
 1
@@ -623,9 +621,9 @@ NIL
 1
 
 MONITOR
-1060
+1185
 20
-1157
+1282
 65
 # Adults
 count turtles with [ life-stage = \"Adult\" ]
@@ -634,10 +632,10 @@ count turtles with [ life-stage = \"Adult\" ]
 11
 
 SLIDER
-15
-620
-187
-653
+20
+590
+192
+623
 emigration-timer
 emigration-timer
 1
@@ -649,10 +647,10 @@ NIL
 HORIZONTAL
 
 SWITCH
-1175
-455
-1278
-488
+1100
+565
+1203
+598
 profiler?
 profiler?
 1
@@ -660,10 +658,10 @@ profiler?
 -1000
 
 SWITCH
-700
-540
-820
-573
+515
+25
+635
+58
 capture-data?
 capture-data?
 0
@@ -671,36 +669,36 @@ capture-data?
 -1000
 
 SWITCH
-1175
-495
-1300
-528
+1100
+605
+1225
+638
 update-colour?
 update-colour?
-1
+0
 1
 -1000
 
 SLIDER
-15
-500
-187
-533
+20
+470
+192
+503
 raft-half-way
 raft-half-way
 0
 500
-200.0
-1
+250.0
+5
 1
 NIL
 HORIZONTAL
 
 SWITCH
-545
-580
-635
-613
+245
+675
+345
+708
 collapse?
 collapse?
 0
@@ -708,10 +706,10 @@ collapse?
 -1000
 
 SLIDER
-15
-540
-187
-573
+20
+510
+192
+543
 emigration-curve
 emigration-curve
 0
@@ -723,10 +721,10 @@ NIL
 HORIZONTAL
 
 SWITCH
-545
-620
-652
-653
+245
+595
+345
+628
 prospect?
 prospect?
 0
@@ -734,10 +732,10 @@ prospect?
 -1000
 
 BUTTON
-15
-145
-95
-178
+275
+70
+355
+103
 NIL
 set-defaults
 NIL
@@ -751,25 +749,25 @@ NIL
 1
 
 CHOOSER
-270
-70
-408
-115
+15
+140
+153
+185
 isl-att-curve
 isl-att-curve
 "uniform" "linear" "asymptotic" "sigmoid" "beta1" "beta2"
 5
 
 SLIDER
-15
-580
-187
-613
+20
+550
+192
+583
 emig-out-prob
 emig-out-prob
 0
 1
-0.8
+0.75
 0.05
 1
 NIL
@@ -781,7 +779,7 @@ INPUTBOX
 255
 95
 initialisation-data
-./data/local_sensitivity_analysis/lsa_two_isl_baseline.csv
+./data/consistency_analysis/two_isl_baseline.csv
 1
 0
 String
@@ -802,10 +800,10 @@ NIL
 HORIZONTAL
 
 SLIDER
-15
-375
-187
-408
+20
+370
+192
+403
 sex-ratio
 sex-ratio
 0
@@ -817,9 +815,9 @@ NIL
 HORIZONTAL
 
 PLOT
-1336
+1461
 8
-1771
+1896
 193
 Island Adult Counts
 Ticks
@@ -834,9 +832,9 @@ true
 PENS
 
 MONITOR
-1170
+1295
 20
-1247
+1372
 65
 # Juveniles
 count turtles with [ life-stage = \"Juvenile\" ]
@@ -845,10 +843,10 @@ count turtles with [ life-stage = \"Juvenile\" ]
 11
 
 SLIDER
-15
-660
-185
-693
+20
+630
+190
+663
 emigration-max-attempts
 emigration-max-attempts
 1
@@ -860,9 +858,9 @@ NIL
 HORIZONTAL
 
 PLOT
-1336
+1461
 553
-1771
+1896
 728
 Chicks Fledged
 NIL
@@ -877,9 +875,9 @@ true
 PENS
 
 MONITOR
-1170
+1295
 70
-1327
+1452
 115
 Emigrants Leaving System
 emig-out
@@ -888,9 +886,9 @@ emig-out
 11
 
 PLOT
-1336
+1461
 378
-1771
+1896
 543
 Island Breeding Attempts
 Number of Breeders Attempting
@@ -905,10 +903,10 @@ true
 PENS
 
 INPUTBOX
-835
-575
-1052
-635
+755
+535
+972
+595
 output-file-name
 ./output/test.csv
 1
@@ -916,10 +914,10 @@ output-file-name
 String
 
 BUTTON
-740
-575
-817
-608
+665
+535
+742
+568
 Save file
 csv:to-file output-file-name island-series
 NIL
@@ -933,10 +931,10 @@ NIL
 1
 
 TEXTBOX
-1065
-435
-1165
-461
+985
+545
+1085
+571
 Systems checks
 12
 0.0
@@ -953,50 +951,50 @@ System Creation\n
 1
 
 TEXTBOX
-15
-200
-165
-218
+20
+195
+170
+213
 Seabird Recruitment\n
 12
 0.0
 1
 
 TEXTBOX
-270
-130
-420
-148
-Natural Mortality Controls
+245
+140
+395
+158
+Natural Mortality
 12
 0.0
 1
 
 TEXTBOX
-15
-480
-160
-498
-Emigration Controls
+20
+450
+165
+468
+Emigration
 12
 0.0
 1
 
 TEXTBOX
-270
-600
-420
-618
+20
+670
+170
+688
 Mate Finding\n
 12
 0.0
 1
 
 SLIDER
-270
-305
-442
-338
+245
+360
+417
+393
 adult-mortality-sd
 adult-mortality-sd
 0
@@ -1008,36 +1006,36 @@ NIL
 HORIZONTAL
 
 SLIDER
-270
-145
-442
-178
+245
+200
+417
+233
 juvenile-mortality-sd
 juvenile-mortality-sd
 0
 1
-0.05
+0.1
 0.01
 1
 NIL
 HORIZONTAL
 
 INPUTBOX
-835
-645
-1052
-705
+890
+700
+1107
+760
 behav-output-path
-./output/chick_predation/
+./output/
 1
 0
 String
 
 SWITCH
-545
-540
-648
-573
+435
+155
+538
+188
 enso?
 enso?
 0
@@ -1045,10 +1043,10 @@ enso?
 -1000
 
 INPUTBOX
-270
-465
-445
-525
+435
+195
+610
+255
 enso-breed-impact
 [0.5 0.2 0 0.2 0.5]
 1
@@ -1056,30 +1054,30 @@ enso-breed-impact
 String
 
 TEXTBOX
-450
-540
 545
-580
+155
+660
+185
 Added ENSO mortality \n(LN LNL N ENL EN)
 11
 0.0
 1
 
 INPUTBOX
-270
-530
-445
-590
+435
+260
+610
+320
 enso-adult-mort
-[0.25 0.1 0 0.1 0.25]
+[0.05 0.025 0 0.025 0.05]
 1
 0
 String
 
 PLOT
-1060
+1185
 280
-1325
+1450
 425
 ENSO States
 Ticks
@@ -1095,10 +1093,10 @@ PENS
 "default" 1.0 0 -12345184 true "" "plot enso-state"
 
 INPUTBOX
-1065
-575
-1170
-635
+770
+700
+875
+760
 nlrx-id
 test
 1
@@ -1106,10 +1104,10 @@ test
 String
 
 SWITCH
-1065
-535
-1168
-568
+665
+700
+755
+733
 nlrx?
 nlrx?
 0
@@ -1117,30 +1115,30 @@ nlrx?
 -1000
 
 TEXTBOX
-835
-530
-1065
-586
+760
+606
+990
+656
 The save file button is for individual runs and will save all simulation information to the specified output-file-name\n
 11
 0.0
 1
 
 TEXTBOX
-715
-655
-830
-696
+895
+765
+1120
+806
 The behav-output-path is only for use with behaviour space or nlrx\n
 11
 0.0
 1
 
 SWITCH
-1175
-535
-1297
-568
+985
+645
+1110
+678
 print-stage?
 print-stage?
 1
@@ -1148,15 +1146,168 @@ print-stage?
 -1000
 
 INPUTBOX
-1175
-575
-1295
+515
+65
 635
+125
 seed-id
-2.002269415E9
+42.0
 1
 0
 Number
+
+SLIDER
+355
+595
+530
+628
+patch-burrow-limit
+patch-burrow-limit
+10
+300
+100.0
+5
+1
+NIL
+HORIZONTAL
+
+TEXTBOX
+435
+140
+585
+158
+ENSO Mortality
+12
+0.0
+1
+
+TEXTBOX
+245
+495
+395
+513
+Habitat
+12
+0.0
+1
+
+SLIDER
+355
+550
+527
+583
+burrow-attrition-rate
+burrow-attrition-rate
+0
+1
+0.2
+0.01
+1
+NIL
+HORIZONTAL
+
+SWITCH
+245
+515
+345
+548
+attrition?
+attrition?
+0
+1
+-1000
+
+SLIDER
+355
+630
+530
+663
+time-to-prospect
+time-to-prospect
+1
+10
+2.0
+1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+355
+675
+527
+708
+collapse-half-way
+collapse-half-way
+10
+400
+150.0
+5
+1
+NIL
+HORIZONTAL
+
+SLIDER
+355
+710
+527
+743
+collapse-perc
+collapse-perc
+0
+1
+0.25
+0.01
+1
+NIL
+HORIZONTAL
+
+SLIDER
+355
+745
+527
+778
+collapse-perc-sd
+collapse-perc-sd
+0
+0.2
+0.05
+0.01
+1
+NIL
+HORIZONTAL
+
+PLOT
+1185
+430
+1450
+555
+Burrow Counts
+Ticks
+# of Burrows
+0.0
+10.0
+0.0
+10.0
+true
+true
+"" "isl-burrow-plot"
+PENS
+
+SLIDER
+355
+515
+527
+548
+patch-burrow-minimum
+patch-burrow-minimum
+0
+10
+5.0
+1
+1
+NIL
+HORIZONTAL
 
 @#$#@#$#@
 ## WHAT IS IT?

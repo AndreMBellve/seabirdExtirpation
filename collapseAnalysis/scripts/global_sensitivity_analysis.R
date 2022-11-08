@@ -17,7 +17,7 @@ netlogopath <- file.path("C:/Program Files/NetLogo 6.2.2")
 modelpath <- file.path("D:/seabirdExtirpation/collapse_behav_space.nlogo")
 
 #Where my results from the nrlx run will be stored...
-outpath <- file.path("D:/seabirdExtirpation/output/local_sensitivity_analysis")
+outpath <- file.path("D:/seabirdExtirpation/output/global_sensitivity_analysis")
 
 # Setup nl object - this initialises an instance of NetLogo
 collapse_nl <- nl(nlversion = "6.2.2",
