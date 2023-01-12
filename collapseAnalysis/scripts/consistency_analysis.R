@@ -269,7 +269,7 @@ ggplot(adult_c_df, aes(ticks, adult_sd,
 
 #Determining the number of replicates needed of a particular parameter set to accurately capture variability.
 #Calculating 
-adult_var_df <- twoIsl_df %>% 
+adult_var_df <- consistency_df %>% 
   filter(ticks == 500) %>%
   pivot_longer(cols = starts_with("settled_"),
                names_to = "island_id",
@@ -301,15 +301,17 @@ ggplot(adult_var_df, aes(run_num, adult_sd,
 
 
 # Calculating the mean and sd for each island for 450 - 500 years to include in the LSA analysis
-consist_50y_sum <- twoIsl_df %>% 
+consist_50y_sum <- consistency_df %>% 
   filter(ticks >= 450 & ticks <= 500) %>%
   #Pivot to long format
   pivot_longer(cols = starts_with("settled_"),
                names_to = "island_id",
                values_to = "adult_count") %>% 
   group_by(island_id) %>% 
-  summarise(adult_mean = mean(adult_count, na.rm = TRUE),
-         adult_sd = sd(adult_count, na.rm = TRUE)) %>% 
+  summarise(adult_mean = mean(adult_count, 
+                              na.rm = TRUE),
+            adult_sd = sd(adult_count, 
+                          na.rm = TRUE)) %>% 
   ungroup()
 
 consist_50y_sum

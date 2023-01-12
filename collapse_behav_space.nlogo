@@ -285,13 +285,13 @@ to-report local-occ
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
-665
-15
+645
+20
 1178
-529
+554
 -1
 -1
-5.0
+5.2
 1
 10
 1
@@ -489,9 +489,9 @@ count breeders with [ mating? ]
 11
 
 SWITCH
-985
+1095
 565
-1087
+1197
 598
 debug?
 debug?
@@ -593,9 +593,9 @@ NIL
 HORIZONTAL
 
 SWITCH
-985
+1095
 605
-1087
+1197
 638
 verbose?
 verbose?
@@ -647,9 +647,9 @@ NIL
 HORIZONTAL
 
 SWITCH
-1100
+1210
 565
-1203
+1313
 598
 profiler?
 profiler?
@@ -669,13 +669,13 @@ capture-data?
 -1000
 
 SWITCH
-1100
+1210
 605
-1225
+1335
 638
 update-colour?
 update-colour?
-0
+1
 1
 -1000
 
@@ -779,7 +779,7 @@ INPUTBOX
 255
 95
 initialisation-data
-./data/consistency_analysis/two_isl_baseline.csv
+./data/hyper_densities/predators.csv
 1
 0
 String
@@ -903,10 +903,10 @@ true
 PENS
 
 INPUTBOX
-755
-535
-972
-595
+750
+565
+967
+625
 output-file-name
 ./output/test.csv
 1
@@ -914,10 +914,10 @@ output-file-name
 String
 
 BUTTON
-665
-535
-742
-568
+660
+565
+737
+598
 Save file
 csv:to-file output-file-name island-series
 NIL
@@ -931,10 +931,10 @@ NIL
 1
 
 TEXTBOX
-985
-545
-1085
-571
+995
+565
+1095
+591
 Systems checks
 12
 0.0
@@ -1021,10 +1021,10 @@ NIL
 HORIZONTAL
 
 INPUTBOX
-890
-700
-1107
-760
+880
+705
+1097
+765
 behav-output-path
 ./output/
 1
@@ -1054,9 +1054,9 @@ enso-breed-impact
 String
 
 TEXTBOX
-545
+540
 155
-660
+655
 185
 Added ENSO mortality \n(LN LNL N ENL EN)
 11
@@ -1093,10 +1093,10 @@ PENS
 "default" 1.0 0 -12345184 true "" "plot enso-state"
 
 INPUTBOX
-770
-700
-875
 760
+705
+865
+765
 nlrx-id
 test
 1
@@ -1104,10 +1104,10 @@ test
 String
 
 SWITCH
-665
-700
-755
-733
+655
+705
+745
+738
 nlrx?
 nlrx?
 0
@@ -1115,29 +1115,29 @@ nlrx?
 -1000
 
 TEXTBOX
-760
-606
-990
-656
+755
+636
+985
+686
 The save file button is for individual runs and will save all simulation information to the specified output-file-name\n
 11
 0.0
 1
 
 TEXTBOX
-895
-765
-1120
-806
+885
+770
+1110
+811
 The behav-output-path is only for use with behaviour space or nlrx\n
 11
 0.0
 1
 
 SWITCH
-985
+1095
 645
-1110
+1220
 678
 print-stage?
 print-stage?
@@ -1657,7 +1657,7 @@ false
 Polygon -7500403 true true 270 75 225 30 30 225 75 270
 Polygon -7500403 true true 30 75 75 30 270 225 225 270
 @#$#@#$#@
-NetLogo 6.2.2
+NetLogo 6.3.0
 @#$#@#$#@
 @#$#@#$#@
 @#$#@#$#@
@@ -2091,6 +2091,144 @@ NetLogo 6.2.2
     </enumeratedValueSet>
     <enumeratedValueSet variable="age-at-first-breeding">
       <value value="6"/>
+    </enumeratedValueSet>
+  </experiment>
+  <experiment name="persistence" repetitions="10" runMetricsEveryStep="true">
+    <setup>setup</setup>
+    <go>step</go>
+    <final>behav-csv</final>
+    <timeLimit steps="50"/>
+    <enumeratedValueSet variable="age-at-first-breeding">
+      <value value="6"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="prospect?">
+      <value value="true"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="isl-att-curve">
+      <value value="&quot;beta2&quot;"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="collapse?">
+      <value value="true"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="juvenile-mortality">
+      <value value="0.65"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="prop-returning-breeders">
+      <value value="0.9"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="sex-ratio">
+      <value value="1"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="capture-data?">
+      <value value="true"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="diffusion-prop">
+      <value value="0.4"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="adult-mortality-sd">
+      <value value="0.01"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="emig-out-prob">
+      <value value="0.75"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="verbose?">
+      <value value="false"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="attrition?">
+      <value value="true"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="raft-half-way">
+      <value value="250"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="emigration-timer">
+      <value value="4"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="collapse-half-way">
+      <value value="150"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="age-first-return">
+      <value value="5"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="behav-output-path">
+      <value value="&quot;./output/&quot;"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="old-mortality">
+      <value value="0.8"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="emigration-curve">
+      <value value="0.5"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="collapse-perc-sd">
+      <value value="0.05"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="juvenile-mortality-sd">
+      <value value="0.1"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="emigration-max-attempts">
+      <value value="2"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="natural-chick-mortality">
+      <value value="0.4"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="print-stage?">
+      <value value="false"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="update-colour?">
+      <value value="false"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="female-philopatry">
+      <value value="0.95"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="chick-mortality-sd">
+      <value value="0.1"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="nhb-rad">
+      <value value="4"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="patch-burrow-limit">
+      <value value="100"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="adult-mortality">
+      <value value="0.05"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="initialisation-data">
+      <value value="&quot;./data/hyper_densities/predators.csv&quot;"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="enso?">
+      <value value="true"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="max-tries">
+      <value value="6"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="max-age">
+      <value value="28"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="enso-adult-mort">
+      <value value="&quot;[0.05 0.025 0 0.025 0.05]&quot;"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="debug?">
+      <value value="false"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="collapse-perc">
+      <value value="0.25"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="nlrx?">
+      <value value="false"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="time-to-prospect">
+      <value value="2"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="burrow-attrition-rate">
+      <value value="0.2"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="patch-burrow-minimum">
+      <value value="5"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="profiler?">
+      <value value="false"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="enso-breed-impact">
+      <value value="&quot;[0.5 0.2 0 0.2 0.5]&quot;"/>
     </enumeratedValueSet>
   </experiment>
 </experiments>

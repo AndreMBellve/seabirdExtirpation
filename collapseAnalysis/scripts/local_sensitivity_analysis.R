@@ -81,7 +81,7 @@ default_ls <- list(
   
   #These are never changed....
   #Data export controls
-  "behav-output-path" = "\"./output/consistency_analysis/\""
+  "behav-output-path" = "\"./output/local_sensitivity_analysis/\""
 )
 
 #Creating a vector of all the initialisation files to be iterated over.
@@ -252,7 +252,7 @@ for(i in seq_along(lsa_ls)){
 
 toc()
 
-#(148 hrs)
+#(115 hrs)
 
 names(lsa_results) <- names(lsa_ls)
 
@@ -262,7 +262,7 @@ names(lsa_results) <- names(lsa_ls)
 
 #Checking the number of unique parameter settings
 length(unlist(lsa_ls))
-#109 unique parameters - 100 seeds, so 10100 runs
+#121 unique parameters - 100 seeds, so 10100 runs
 
 
 
@@ -290,7 +290,7 @@ source("./scripts/functions/cumvar.r")
 
 # Reading in data ---------------------------------------------------------
 
-#Reading in files
+# Reading in files
 # tic("Reading individual files")
 # 
 # lsa_res_vr <- list.files("../output/local_sensitivity_analysis/",
@@ -334,38 +334,16 @@ names(lsa_meta_df) <- str_replace_all(names(lsa_meta_df), "[-]", "_")
 lsa_meta_df <- lsa_meta_df %>% 
   mutate(init_data = str_remove(str_remove(initialisation_data, "./data/local_sensitivity_analysis/lsa_two_isl_"), ".csv"),
          varying_param = str_replace_all(varying_param, "-", "_"),
-         var_ratio = 1,
+         input_change = NA,
          state = "") %>% 
   as.data.frame()
 
 
 #Creating a vector indicating whether the varying parameter is higher or lower than the default
 #Creating vectors of each type of enso response (up or down... for the case_when as these are problematic characters)
-enso_chick_down <- c("[0.45 0.2 0 0.2 0.5]",
-                    "[0.5 0.18 0 0.2 0.5]",
-                    "[0.5 0.2 0 0.18 0.5]",
-                    "[0.5 0.2 0 0.2 0.45]")
-
-enso_chick_baseline <- "[0.5 0.2 0 0.2 0.5]"
-
-enso_chick_up <- c("[0.55 0.2 0 0.2 0.5]",
-                   "[0.5 0.22 0 0.2 0.5]",
-                   "[0.5 0.2 0 0.22 0.5]",
-                   "[0.5 0.2 0 0.2 0.55]")
 
 
-
-enso_ad_down <- c("[0.225 0.1 0 0.1 0.25]",
-"[0.25 0.09 0 0.1 0.25]",
-"[0.25 0.1 0 0.09 0.25]",
-"[0.25 0.1 0 0.1 0.225]")
-
-enso_ad_baseline <- "[0.25 0.1 0 0.1 0.25]"
-
-enso_ad_up <- c("[0.275 0.1 0 0.1 0.25]",
-                "[0.25 0.11 0 0.1 0.25]",
-                "[0.25 0.1 0 0.11 0.25]",
-                "[0.25 0.1 0 0.1 0.275]")
+source("./scripts/enso_baselines.r")
 
 #Creating a variable indicating whether the varying parameter has gone up or down by 10%
 
@@ -373,7 +351,7 @@ enso_ad_up <- c("[0.275 0.1 0 0.1 0.25]",
 var_nl_name <- names(default_ls)
 var_r_name <- str_replace_all(names(default_ls), "-", "_")
 
-for(i in 2:25){
+for(i in 2:(length(var_r_name) - 1)){
   
   #Pulling out each variable in the dataframe that varied via sliding parameter(does not work for the intitialisation parameters)
   meta_var <- lsa_meta_df[lsa_meta_df$varying_param == var_r_name[i],] %>% 
@@ -381,30 +359,30 @@ for(i in 2:25){
   
   if(is.numeric(meta_var[1,])){
     #Checking if it is higher or lower than the default for numeric elements
-    var_state <- ifelse(meta_var > default_ls[[i]], "Up", 
+    var_state <- ifelse(meta_var > default_ls[[var_nl_name[[i]]]], "Up", 
                          ifelse(meta_var < default_ls[[i]], "Down", "Default"))
     
-    var_ratio <- meta_var / default_ls[[i]]
+    input_change <- abs(meta_var[,1] - default_ls[[var_nl_name[[i]]]]) / default_ls[[var_nl_name[[i]]]]
     
     #Overwriting the status for that parameter
     lsa_meta_df[lsa_meta_df$varying_param == var_r_name[i],]$state <- var_state
     
     #Overwriting the sensitivity index for that parameter
-    lsa_meta_df[lsa_meta_df$varying_param == var_r_name[i],]$var_ratio <- var_ratio
+    lsa_meta_df[lsa_meta_df$varying_param == var_r_name[i],]$input_change <- input_change
     
   }
   
   #The ENSO variables - these are stored as strings but are actually numbers underneath the hood
-  if(var_r_name[i] == "enso_breed_impact"){
-    var_state <- ifelse(meta_var %in% enso_ad_up, "Up", 
-                        ifelse(meta_var %in% enso_ad_down, "Down", "Default"))
+  if(var_r_name[i] == "enso_adult_mort"){
+    var_state <- ifelse(meta_var[,1] %in% enso_ad_up, "Up", 
+                        ifelse(meta_var[,1] %in% enso_ad_down, "Down", "Default"))
     #Overwriting the status for that parameter
     lsa_meta_df[lsa_meta_df$varying_param == var_r_name[i],]$state <- var_state
   }
   
-  if(var_r_name[i] == "enso_adult_mort"){
-    var_state <- ifelse(meta_var %in% enso_chick_up, "Up", 
-                        ifelse(meta_var %in% enso_chick_down, "Down", "Default"))
+  if(var_r_name[i] == "enso_breed_impact"){
+    var_state <- ifelse(meta_var[,1] %in% enso_chick_up, "Up", 
+                        ifelse(meta_var[,1] %in% enso_chick_down, "Down", "Default"))
     
     #Overwriting the status for that parameter
     lsa_meta_df[lsa_meta_df$varying_param == var_r_name[i],]$state <- var_state
@@ -428,32 +406,70 @@ lsa_meta_df[lsa_meta_df$varying_param == "initialisation_data",]$varying_param <
   str_split(lsa_meta_df[lsa_meta_df$varying_param == "initialisation_data",]$init_data, 
             "_", simplify = T)[,1]
 
+#Creating a vector of variable names for the variables that were changed by 10% BUT either coded as character strings or read in via csv making them problematic to manipulate. This vector is used in the following mutate to specify the variable_ratio.
+ten_perc_vars <- c("adpop", "adultp", "chickp", "clust",
+                   "enso_adult_mort", "enso_breed_impact",
+                   "habagg", "highlam", "juvpop", "propsuit")
+
 #Correcting the file name values
 lsa_meta_df <- lsa_meta_df %>% 
   mutate(state = replace(state, state == "u", "Up"),
          state = replace(state, state == "d", "Down"),
-         state = factor(state, levels = c("Down", "Default", "Up")))
+         state = factor(state, levels = c("Down", "Default", "Up")),
+         
+         input_change = replace(input_change, varying_param %in% ten_perc_vars & state != "Default", 0.1),
+         input_change = replace(input_change, varying_param %in% ten_perc_vars & state == "Default", 0),
+         
+         input_change = replace(input_change, varying_param == "lowlam" & state != "Default", 1),
+
+         input_change = replace(input_change, varying_param == "lowlam" & state == "Default", 0))
 
 #Reading in combined files
 lsa_50ysum_df <- vroom("./output/local_sensitivity_analysis/lsa_allrun_data.csv") %>% 
   #Reducing this to just the last 50 years of data to summarise over.
-  filter(ticks == 450) %>% 
+  filter(ticks >= 450) %>% 
   #Joining on the meta data
   left_join(lsa_meta_df, 
             by = c("run_id" = "nlrx_id")) %>% 
   pivot_longer(cols = starts_with("settled_"),
                names_to = "island_id",
                values_to = "adult_count") %>% 
-  group_by(run_id, island_id, varying_param, state) %>% 
+  group_by(run_id, island_id, varying_param, input_change, state) %>% 
   summarise(adult_mean = mean(adult_count),
             adult_sd = sd(adult_count),
-            .groups = "keep")
+            .groups = "keep") %>% 
+  #Calculating the proportional change in each variable
+  mutate(baseline_abund = ifelse(island_id == "settled_ct_isl_1", 71, 23576),
+         output_change = abs(adult_mean - baseline_abund) / baseline_abund,
+         proportional_change = output_change / input_change)
+
+#Plotting the proportional change
+ggplot(filter(lsa_50ysum_df, state != "Default" & !is.na(state)), 
+              aes(y = proportional_change, x = state)) +
+  geom_boxplot() + 
+  geom_point() +  
+  geom_hline(yintercept = 1, linetype = "dashed", colour = "blue") + 
+  geom_hline(yintercept = 1.5, linetype = "dotdash", colour = "red") + 
+  facet_wrap(~varying_param)
+
+#Summary of proportional change by variable
+prop_change_summ <- lsa_50ysum_df %>% 
+  filter(state != "Default") %>% 
+  group_by(varying_param, state) %>% 
+  summarise(mean_prop_change = round(mean(proportional_change, na.rm = TRUE), digits = 2),
+            sd_prop_change = round(sd(proportional_change, na.rm = TRUE), digits = 2),
+            median_prop_change = round(median(proportional_change, na.rm = TRUE), digits = 2),
+            upper_prop_quartile = round(quantile(proportional_change, probs = 0.75, na.rm = TRUE), digits = 2),
+            lower_prop_quartile = round(quantile(proportional_change, probs = 0.25, na.rm = TRUE), digits = 2))
+  
+prop_change_summ
+View(prop_change_summ)
 
 # #Predator free island
-# lsa_50ysum_df %>% 
-#   filter(island_id == "settled_ct_isl_2" & varying_param != "baseline") %>% 
+# lsa_50ysum_df %>%
+#   filter(island_id == "settled_ct_isl_2" & varying_param != "baseline") %>%
 # ggplot(aes(x = state, y = adult_mean,
-#            colour = state)) + 
+#            colour = state)) +
 #   geom_violin() +
 #   geom_point() +
 #   scale_colour_viridis_d() +
@@ -462,7 +478,6 @@ lsa_50ysum_df <- vroom("./output/local_sensitivity_analysis/lsa_allrun_data.csv"
 #   theme(
 #     #axis.text.x = element_text(angle = 90)
 #     )
-# 
 # #Predator Island
 # lsa_50ysum_df %>% 
 #   filter(island_id == "settled_ct_isl_1" & varying_param != "baseline") %>% 
@@ -478,7 +493,9 @@ lsa_50ysum_df <- vroom("./output/local_sensitivity_analysis/lsa_allrun_data.csv"
 #   )
 
 #Merging in consistency data
-consist_50y_sum <- structure(list(island_id = c("settled_ct_isl_1", "settled_ct_isl_2"), adult_mean = c(44.7791176470588, 13997.8889215686), adult_sd = c(61.3396330172422,4172.4057788341)), class = c("tbl_df", "tbl", "data.frame"), row.names = c(NA, -2L))
+consist_50y_sum <- structure(list(island_id = c("settled_ct_isl_1", "settled_ct_isl_2"
+), adult_mean = c(71, 23576), adult_sd = c(96, 4877)), 
+class = c("tbl_df", "tbl", "data.frame"), row.names = c(NA,-2L))
 
 
 lsa_50ysum_df %>% 
@@ -502,9 +519,7 @@ lsa_50ysum_df %>%
   
   facet_wrap(~varying_param, scales = "free") +
   ggtitle("Predator Free Island") +
-  theme(
-    #axis.text.x = element_text(angle = 90)
-  )
+  theme()
 
 
 lsa_50ysum_df %>% 
@@ -769,6 +784,12 @@ enso_adult_df %>%
   facet_wrap(~state) + 
   
   ggtitle("Predator Island")
+
+
+
+ggplot(lsa_50ysum_df, aes(y = prop_change, x = state)) +
+# Calculating variable-response change ------------------------------------
+
 
 
 

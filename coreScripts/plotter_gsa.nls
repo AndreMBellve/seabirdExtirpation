@@ -1,0 +1,318 @@
+;;Script of reporters for plotting function and census counts
+
+;;Adult counts by island
+;;Plots for the adult counts
+to init-isl-adult-plot
+  
+  set isl-adult-pen-names []
+
+  set-current-plot "Island Adult Counts"  
+  foreach island-id [ i ->
+    
+    set isl-adult-pen-names lput (word "Island: " i) isl-adult-pen-names 
+    create-temporary-plot-pen  item (i - 1) isl-adult-pen-names
+    plotxy 0 0
+    
+  ]
+  
+  ;isl-adult-plot ;;Plotting by island function
+  
+end
+
+to isl-adult-plot
+    
+  set-current-plot "Island Adult Counts"  
+  foreach island-id [ i ->
+    
+    ;;Selecting the pen
+    set-current-plot-pen (item (i - 1) isl-adult-pen-names)
+    ;;Identifying colour
+    let current-colour ((i * 10) + 5) ;;× 10 to change the colour base and +5 to give a colour in the middle of the spectrum
+    ;;Giving it the correct colour
+    set-plot-pen-color current-colour
+    ;;Plotting the count for that pen 
+    plot item (i - 1) adult-isl-counts
+    
+  ]
+  
+end
+
+to init-isl-breed-plot
+  
+  set isl-breed-pen-names []
+
+  set-current-plot "Island Breeding Attempts"  
+  foreach island-id [ i ->
+    
+    set isl-breed-pen-names lput (word "Island: " i) isl-breed-pen-names
+    create-temporary-plot-pen  item (i - 1) isl-breed-pen-names
+    plotxy 0 0
+    
+  ]
+  
+end
+
+to isl-breed-plot
+    
+  set-current-plot "Island Breeding Attempts"  
+  foreach island-id [ i ->
+    
+    ;;Selecting the pen
+    set-current-plot-pen (item (i - 1) isl-breed-pen-names)
+    ;;Identifying colour
+    let current-colour ((i * 10) + 5) ;;× 10 to change the colour base and +5 to give a colour in the middle of the spectrum
+    ;;Giving it the correct colour
+    set-plot-pen-color current-colour
+    ;;Plotting the count for that pen 
+    plot item (i - 1) breeder-isl-counts
+    
+  ]
+  
+end
+
+
+;;Census counting adults by island
+to isl-adult-n
+  
+  ;;Initialise the list
+  set adult-isl-counts []
+  
+  foreach island-id [ i ->
+   
+    let isl-i-count count turtles with [ settled? and breeding-ground-id = i ]  
+    set adult-isl-counts lput isl-i-count adult-isl-counts
+    
+  ]
+  
+end
+
+;;Adult counts by island
+;;Plots for the adult counts
+to init-isl-fledge-plot
+  
+  set isl-fledge-pen-names []
+
+  set-current-plot "Chicks Fledged"  
+  foreach island-id [ i ->
+    
+    set isl-fledge-pen-names lput (word "Island: " i) isl-fledge-pen-names 
+    create-temporary-plot-pen  item (i - 1) isl-fledge-pen-names
+    plotxy 0 0
+    
+  ]
+
+end
+
+to isl-fledge-plot
+    
+  set-current-plot "Chicks Fledged"
+  foreach island-id [ i ->
+    
+    ;;Selecting the pen
+    set-current-plot-pen (item (i - 1) isl-fledge-pen-names)
+    ;;Identifying colour
+    let current-colour ((i * 10) + 5) ;;× 10 to change the colour base and +5 to give a colour in the middle of the spectrum
+    ;;Giving it the correct colour
+    set-plot-pen-color current-colour
+    ;;Plotting the count for that pen 
+    plot item (i - 1) fledged-isl-counts
+    
+  ]
+  
+end
+
+
+
+;;Breeder proportions by island
+;;Plots for the adult counts
+to init-isl-mating-plot
+  
+  set isl-mating-pen-names []
+
+  set-current-plot "Proportion Mating"  
+  foreach island-id [ i ->
+    
+    set isl-mating-pen-names lput (word "Island: " i) isl-mating-pen-names 
+    create-temporary-plot-pen  item (i - 1) isl-mating-pen-names
+    plotxy 0 0
+    
+  ]
+  
+  ;isl-mating-plot ;;Plotting by island function
+  
+end
+
+to isl-mating-plot
+    
+  set-current-plot "Proportion Mating"  
+  foreach island-id [ i ->
+    
+    ;;Selecting the pen
+    set-current-plot-pen (item (i - 1) isl-mating-pen-names)
+    ;;Identifying colour
+    let current-colour ((i * 10) + 5) ;;× 10 to change the colour base and +5 to give a colour in the middle of the spectrum
+    ;;Giving it the correct colour
+    set-plot-pen-color current-colour
+    ;;Plotting the count for that pen 
+    plot item (i - 1) mating-isl-props
+    
+  ]
+  
+end
+
+
+;;Census counting
+to isl-mate-prop
+  
+  ;;Initialise the list
+  set mating-isl-props []
+  
+  foreach island-id [ i ->
+   
+    ;;The number of successful mating birds
+    let isl-i-mating count breeders with [ breeding? and mating? and breeding-ground-id = i ]  
+    ;;The number of potential mating birds (a.k.a bachelorettes) 
+    let isl-i-bach count breeders with [ breeding-ground-id = i ]  
+    
+    ifelse isl-i-bach > 0
+    ;;If there are birds...
+    [
+      ;;Finding the proportion
+      let isl-i-prop precision (isl-i-mating / isl-i-bach) 3
+    
+      if verbose? [ print (word "Mating: " isl-i-mating " |  Settled: " isl-i-bach " | Prop: " isl-i-prop) ]
+      ;print (word "Mating: " isl-i-mating " |  Settled: " isl-i-bach " | Prop: " isl-i-prop)
+      ;;Adding it to the list
+      set mating-isl-props lput isl-i-prop mating-isl-props
+    ]
+    ;;else...In the case of there being no birds settled on an island
+    [
+      set mating-isl-props lput 0 mating-isl-props
+    ]
+    
+  ]
+  
+end
+
+
+;;Plots for the burrow counts
+to init-isl-burrow-plot
+  
+  set isl-burrow-pen-names []
+
+  set-current-plot "Burrow Counts"  
+  foreach island-id [ i ->
+    
+    set isl-burrow-pen-names lput (word "Island: " i) isl-burrow-pen-names 
+    create-temporary-plot-pen  item (i - 1) isl-burrow-pen-names
+    plotxy 0 0
+    
+  ]
+  
+end  
+
+to isl-burrow-plot
+  
+  set-current-plot "Burrow Counts"  
+  foreach island-id [ i ->
+    
+    ;;Selecting the pen
+    set-current-plot-pen (item (i - 1) isl-burrow-pen-names)
+    ;;Identifying colour
+    let current-colour ((i * 10) + 5) ;;× 10 to change the colour base and +5 to give a colour in the middle of the spectrum
+    ;;Giving it the correct colour
+    set-plot-pen-color current-colour
+    ;;Plotting the count for that pen 
+    plot item (i - 1) burrow-counts
+    
+  ]
+  
+end
+
+to isl-burrow-survey
+    
+  ;;Initialise the list
+  set burrow-counts []
+  
+  foreach island-id [ i ->
+  
+    ;;Count how many burrows there are 
+    let isl-i-burrows sum ( [occupancy-limit] of the-islands with [ colony-id = i ] )
+    
+    ;;Update the list
+    set burrow-counts lput isl-i-burrows burrow-counts
+    
+  ]
+  
+end
+
+
+
+to-report isl-name-paste [ data-name ]
+  
+  ;creating a empty list to fill
+  let col-names []
+  
+  ;;Creating a unique set of names for those data
+  foreach island-id [ i -> 
+  
+    ;;making names
+    set col-names lput (word data-name "_isl_" i) col-names 
+    
+  ]
+  
+  ;;Spitting them back out
+  report col-names
+  
+end
+
+
+;;Compiling all the census data from each tick
+to-report census-data
+  
+  ;;Initialising the run id to have some number
+  let run-id 1
+  
+  ;;Checking what kind of run this will be (nlrx or behaviour space...)
+  ifelse nlrx? 
+  [
+    ;;If this is a nlrx run, then I will store the nlrx run id, instead of the behaviour run number, so I can keep track of which run corresponds to which.
+    set run-id nlrx-id
+   
+  ]
+  ;;else, just a regular behaviour run
+  [
+    ;;grabbing Behaviour space run number if present
+    set run-id behaviorspace-run-number
+  ]
+  
+  ;;Compiling list of lists
+  report (sentence run-id enso-state juv-live-isl-counts juv-dead-isl-counts new-adult-isl-counts philo-suc-counts philo-fail-counts emig-source-counts emig-counts emig-att male-counts adult-isl-counts breeder-isl-counts fledged-isl-counts chick-isl-pred adult-mort-isl-counts adult-isl-pred attrition-counts prospect-counts collapse-counts burrow-counts island-attractiveness initialisation-data) 
+  
+end
+
+
+to behav-csv  
+  
+  ;;Initialising the run id to have some number
+  let run-id 1
+  
+  ;;Checking what kind of run this will be (nlrx or behaviour space...)
+  ifelse nlrx? 
+  [
+    ;;If this is a nlrx run, then I will store the nlrx run id, instead of the behaviour run number, so I can keep track of which run corresponds to which.
+    set run-id nlrx-id
+  ]
+  ;;else, just a regular behaviour run
+  [
+    ;;grabbing Behaviour space run number if present
+    set run-id behaviorspace-run-number
+  ]
+  
+  ;;Making the filename for the data based on the path and the run name
+  let file-name (word behav-output-path run-id "_run.csv")
+  
+  ;;Writing all the stored data to a csv
+  csv:to-file file-name island-series
+  
+  end
