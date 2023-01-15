@@ -216,12 +216,7 @@ adult_sum <- adult_c_df %>%
 
 #Plotting the count by island to visualise the data through time.
 ggplot() +
-  # geom_line(data = adult_c_df, 
-  #           aes(ticks, adult_count,
-  #               group = line_id,
-  #               colour = island_id),
-  #           alpha = 0.5) +
-
+  
   geom_ribbon(data = adult_sum,
               aes(ticks, 
                   ymin = isl_mean - isl_sd,
@@ -230,13 +225,36 @@ ggplot() +
                   fill = island_id),
               colour = "black",
               alpha = 0.2) + 
+  
   geom_line(data = adult_sum,
             aes(ticks, isl_mean, 
                 group = island_id,
                 colour = island_id)) +
-  scale_x_continuous(breaks = seq(0, 1000, by = 50)) +
-  theme(axis.text.x = element_text(angle = 45))  
   
+  scale_x_continuous(breaks = seq(0, 1000, by = 50)) +
+  
+  scale_colour_manual(values = c("#F21A00","#3B9AB2"), 
+                      name = "Predator Status", 
+                      labels = c("Present", "Absent")) + 
+  
+  scale_fill_manual(values = c("#F21A00","#3B9AB2"), 
+                    name = "Predator Status", 
+                    labels = c("Present", "Absent")) + 
+  
+  labs(y = "Adult Population", x = "Years") +
+  
+  theme_bw() +
+  
+  theme(axis.text.x = element_text(angle = 45, margin = margin(t = 10)),
+        axis.text = element_text(size = 14),
+        axis.title = element_text(size = 16),
+        
+        legend.title = element_text(size = 16),
+        legend.text = element_text(size = 14))
+  
+
+ggsave("./graphs/consistency/pop_mean_by_isl_burnin_stabil.png",
+       width = 12, height = 6.5)
 
 #Trying to plot the mean/median of each island for the last 50 years
 adult_c_df %>% 
@@ -251,21 +269,76 @@ adult_c_df %>%
 #Determining the number of ticks before the simulation stabilises on the basis of a cumulative mean and standard deviation by each island.
 #Plot of cumulative mean
 ggplot(adult_c_df, aes(ticks, adult_mean,
-                       group = line_id,
+                       #group = line_id,
                        colour = island_id)) +
-  geom_line(alpha = 0.5) +
+
+  geom_line(alpha = 0.5, 
+            aes(group = line_id)) +
+  
+  geom_smooth(aes(fill = island_id),
+              colour = "black") +
+  
   scale_x_continuous(breaks = seq(50, 1000, by = 50)) +
-  theme(axis.text.x = element_text(angle = 45))
+  
+  scale_colour_manual(values = c("#F21A00","#3B9AB2"), 
+                      name = "Predator Status", 
+                      labels = c("Present", "Absent")) + 
+  
+  scale_fill_manual(values = c("#F21A00","#3B9AB2"), 
+                    name = "Predator Status", 
+                    labels = c("Present", "Absent")) + 
+  
+  labs(y = "Cumulative Mean of Adult Population", x = "Years") +
+  
+  theme_bw() +
+  
+  theme(axis.text.x = element_text(angle = 45, margin = margin(t = 10)),
+        axis.text = element_text(size = 14),
+        axis.title = element_text(size = 16),
+        
+        legend.title = element_text(size = 16),
+        legend.text = element_text(size = 14))
+  
+
+ggsave("./graphs/consistency/cumulative_mean_runtime.png",
+       width = 12, height = 6.5)
 
 #The cumulative standard deviation of adult counts through time.
 
 ggplot(adult_c_df, aes(ticks, adult_sd,
-                       group = line_id,
                        colour = island_id)) +
-  geom_line(alpha = 0.5) +
-  scale_x_continuous(breaks = seq(50, 1000, by = 50)) +
-  theme(axis.text.x = element_text(angle = 45))
+  
+  geom_line(alpha = 0.5, 
+            aes(group = line_id)) +
+  
+  geom_smooth(aes(fill = island_id),
+              colour = "black",
+              alpha = 0.8) +
+  
+  scale_x_continuous(breaks = seq(50, 1000, by = 50)) + 
+  
+  scale_colour_manual(values = c("#F21A00","#3B9AB2"), 
+                      name = "Predator Status", 
+                      labels = c("Present", "Absent")) + 
+  
+  scale_fill_manual(values = c("#F21A00","#3B9AB2"), 
+                    name = "Predator Status", 
+                    labels = c("Present", "Absent")) + 
+  
+  labs(y = "Cumulative Standard Deviation of Adult Population", x = "Years") +
+  
+  theme_bw() +
+  
+  theme(axis.text.x = element_text(angle = 45, margin = margin(t = 10)),
+        axis.text = element_text(size = 14),
+        axis.title = element_text(size = 16),
+        
+        legend.title = element_text(size = 16),
+        legend.text = element_text(size = 14))
 
+
+ggsave("./graphs/consistency/cumulative_sd_runtime.png",
+       width = 12, height = 6.5)
 
 #Determining the number of replicates needed of a particular parameter set to accurately capture variability.
 #Calculating 
@@ -288,16 +361,61 @@ adult_var_df <- adult_var_df %>%
 ggplot(adult_var_df, aes(run_num, adult_mean,
                          group = island_id,
                          colour = island_id)) +
-  geom_line(alpha = 0.5) +
-  theme(axis.text.x = element_text(angle = 45))
+  geom_line(size = 1) +
+  
+  scale_colour_manual(values = c("#F21A00","#3B9AB2"), 
+                      name = "Predator Status", 
+                      labels = c("Present", "Absent")) + 
+  
+  scale_fill_manual(values = c("#F21A00","#3B9AB2"), 
+                    name = "Predator Status", 
+                    labels = c("Present", "Absent")) + 
+  
+  labs(y = "Cumulative Mean of Adult Population", 
+       x = "Number of Replicates") +
+  
+  theme_bw() +
+  
+  theme(axis.text.x = element_text(angle = 45, margin = margin(t = 10)),
+        axis.text = element_text(size = 14),
+        axis.title = element_text(size = 16),
+        
+        legend.title = element_text(size = 16),
+        legend.text = element_text(size = 14))
+
+ggsave("./graphs/consistency/cumulative_mean_replicates.png",
+       width = 12, height = 6.5)
+
 
 #This plot suggests the standard deviation around the mean number of adults seems to stabalise at about 25 -> 50 runs
 ggplot(adult_var_df, aes(run_num, adult_sd,
                          group = island_id,
                          colour = island_id)) +
-  geom_line(alpha = 0.5) +
-  theme(axis.text.x = element_text(angle = 45))
+  geom_line(size = 1) +
+  
+  scale_colour_manual(values = c("#F21A00","#3B9AB2"), 
+                      name = "Predator Status", 
+                      labels = c("Present", "Absent")) + 
+  
+  scale_fill_manual(values = c("#F21A00","#3B9AB2"), 
+                    name = "Predator Status", 
+                    labels = c("Present", "Absent")) + 
+  
+  labs(y = "Cumulative Standard Deviation of Adult Population", 
+       x = "Number of Replicates") +
+  
+  theme_bw() +
+  
+  theme(axis.text.x = element_text(angle = 45, margin = margin(t = 10)),
+        axis.text = element_text(size = 14),
+        axis.title = element_text(size = 16),
+        
+        legend.title = element_text(size = 16),
+        legend.text = element_text(size = 14))
 
+
+ggsave("./graphs/consistency/cumulative_sd_replicates.png",
+       width = 12, height = 6.5)
 
 
 # Calculating the mean and sd for each island for 450 - 500 years to include in the LSA analysis

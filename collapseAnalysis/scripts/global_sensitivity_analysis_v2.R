@@ -345,7 +345,7 @@ extTime_pdp_plots_clean
 #rename model params for plotting
 extTime_pdp_plots_clean <- extTime_pdp_plots_clean %>%
   mutate(var = recode(var,
-                      "chick_predation" = "Chick Predation(mean)",
+                      "chick_predation" = "Chick Predation (Mean)",
                       "clust_area" = "Island Radius",
                       "collapse_half_way" = "Collapse 50% Threshold",
                       "emig_out_prob" = "Emigrate out of System (%)",
@@ -362,7 +362,7 @@ extTime_pdp_plots_clean <- extTime_pdp_plots_clean %>%
 
 extTime_pdp_var_imp <- extTime_pdp_var_imp %>%
   mutate(var = recode(var,
-                      "chick_predation" = "Chick Predation(mean)",
+                      "chick_predation" = "Chick Predation (Mean)",
                       "clust_area" = "Island Radius",
                       "collapse_half_way" = "Collapse 50% Threshold",
                       "emig_out_prob" = "Emigrate out of System (%)",
@@ -481,7 +481,7 @@ popsize_pdp_var_imp$var <- row.names(popsize_pdp_var_imp)
 #rename model params for plotting
 popsize_pdp_plots_clean <- popsize_pdp_plots_clean %>%
   mutate(var = recode(var,
-                      "chick_predation" = "Chick Predation(mean)",
+                      "chick_predation" = "Chick Predation (Mean)",
                       "clust_area" = "Island Radius",
                       "collapse_half_way" = "Collapse 50% Threshold",
                       "emig_out_prob" = "Emigrate out of System (%)",
@@ -498,7 +498,7 @@ popsize_pdp_plots_clean <- popsize_pdp_plots_clean %>%
 
 popsize_pdp_var_imp <- popsize_pdp_var_imp %>%
   mutate(var = recode(var,
-                      "chick_predation" = "Chick Predation(mean)",
+                      "chick_predation" = "Chick Predation (Mean)",
                       "clust_area" = "Island Radius",
                       "collapse_half_way" = "Collapse 50% Threshold",
                       "emig_out_prob" = "Emigrate out of System (%)",
@@ -600,7 +600,7 @@ popsize_pdp_var_imp$var <- row.names(popsize_pdp_var_imp)
 #rename model params for plotting
 popsize_pdp_plots_clean <- popsize_pdp_plots_clean %>%
   mutate(var = recode(var,
-                      "chick_predation" = "Chick Predation(mean)",
+                      "chick_predation" = "Chick Predation (Mean)",
                       "clust_area" = "Island Radius",
                       "collapse_half_way" = "Collapse 50% Threshold",
                       "emig_out_prob" = "Emigrate out of System (%)",
@@ -617,7 +617,7 @@ popsize_pdp_plots_clean <- popsize_pdp_plots_clean %>%
 
 popsize_pdp_var_imp <- popsize_pdp_var_imp %>%
   mutate(var = recode(var,
-                      "chick_predation" = "Chick Predation(mean)",
+                      "chick_predation" = "Chick Predation (Mean)",
                       "clust_area" = "Island Radius",
                       "collapse_half_way" = "Collapse 50% Threshold",
                       "emig_out_prob" = "Emigrate out of System (%)",

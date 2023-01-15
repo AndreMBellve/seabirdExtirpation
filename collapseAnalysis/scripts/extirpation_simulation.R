@@ -149,7 +149,7 @@ extir_results_2 <- progressr::with_progress(
 toc()
 
 #(115 hrs)
-#saveRDS(gsa_results_2, "../output/extirpation_simulation/extir_results_2.rds")
+#saveRDS(extir_results_2, "../output/extirpation_simulation/extir_results.rds")
 
 #names(extir_results_2) <- names(extir_ls)
 

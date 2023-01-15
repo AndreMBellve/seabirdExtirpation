@@ -11,8 +11,8 @@ extensions
 __includes
 [
   "./helpers/distributions.nls"
-  "./coreScripts/initialisation_extirpation.nls"
-  "./coreScripts/withinSeason_extirpation.nls"
+  "./coreScripts/initialisation_rako.nls"
+  "./coreScripts/withinSeason_rako.nls"
   "./coreScripts/plotter_gsa.nls"
 ]
 
