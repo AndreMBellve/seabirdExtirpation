@@ -148,7 +148,7 @@ extir_results_2 <- progressr::with_progress(
 
 toc()
 
-#(115 hrs)
+#(110 hrs)
 #saveRDS(extir_results_2, "../output/extirpation_simulation/extir_results.rds")
 
 #names(extir_results_2) <- names(extir_ls)
@@ -159,3 +159,164 @@ toc()
 #121 unique parameters - 100 seeds, so 10100 runs
 
 
+# Extirpation analysis ----------------------------------------------------
+
+#Reading in large data
+library(vroom)
+
+#Data manipulations
+library(janitor) #Name amendments
+library(dplyr) #Data manipulations
+library(tidyr) #Pivoting
+library(stringr) #Parsing data
+
+#Graphing
+library(ggplot2) #Plots
+library(viridis) #Colour scheme 
+
+
+# #Reading in files
+# extirp_res_vr <- list.files("../output/extirpation_simulation/",
+#                         pattern = ".csv",
+#                         full.names = TRUE) %>%
+#   vroom() %>%
+# 
+#  
+#   #Creating a new column to keep track of the tick the run was up to
+#   group_by(run_id) %>%
+# 
+#   #Adding in ticks to sheet
+#   mutate(ticks = 1:n()) %>%
+# 
+#   ungroup()
+# 
+#  #Writing a single large file with some minor manipulations to make it quicker to read in and access
+# vroom_write(extirp_res_vr,
+#           "./output/extirpation_simulation/extirp_allrun_data.csv",
+#           col_names = TRUE)
+
+#Meta information for each run 
+extirp_meta_df <- readRDS("../output/extirpation_simulation/extir_results.rds") %>% 
+  clean_names()
+
+#Reading in the run data
+extirp_df <-  vroom("./output/extirpation_simulation/extirp_allrun_data.csv") %>% 
+  #Reducing this to just the last 50 years of data to summarise over.
+  #filter(ticks >= 450) %>% 
+  #Joining on the meta data
+  left_join(extirp_meta_df, 
+            by = c("run_id" = "nlrx_id")) %>% 
+  pivot_longer(cols = starts_with("settled_"),
+               names_to = "island_id",
+               values_to = "adult_count") %>%  
+  #Creating some convience columns 
+  mutate(island_id = str_sub(island_id, 
+                             start = 16L, end = 16L),
+         predators = ifelse(island_id == "1", "Present", "Absent"),
+         run_number = as.factor(run_number))
+
+
+
+# Graphing ----------------------------------------------------------------
+
+seaPal <- wesanderson::wes_palette("FantasticFox1")[c(4,3, 1)] 
+#c("#440154FF",  "#FDE725FF")
+#viridis(n = 2, begin = 0.2)
+
+ggplot(extirp_df[sample(n = 10^4, 1:180000),],
+  aes(x = ticks, y = adult_count,
+    colour = predators,
+    group = interaction(run_number,  island_id))) +
+  
+  geom_line(linewidth = 0.8) +
+  scale_colour_manual(values = seaPal, 
+                      name = "Predation") +
+  
+  labs(y = "Adults (Count)", x = "Years") +
+  #xlim(c(5, 100)) +
+  
+ 
+  
+ facet_grid(chick_pred_isl_1 ~ adult_pred_isl_1) +
+theme_minimal() +
+theme(axis.text = element_text(size = 12, colour = "white"),
+      axis.title = element_text(size = 14, colour = "white"),
+      strip.text = element_text(size = 12, colour = "white"),
+      legend.text = element_text(size = 12, colour = "white"),
+      legend.title = element_text(size = 14, colour = "white"),
+      panel.grid = element_blank())
+
+
+#Saving
+# ggsave("./graphs/persistance.png",
+#        width = 9.9, height = 5.5)
+
+
+
+
+#
+extirp_summ <- extirp_df %>% 
+  group_by(chick_predation, adult_predation, island_id, ticks, predators) %>% 
+  summarise(adult_mean = mean(adult_count),
+            adult_sd = sd(adult_count),
+            adult_lwr = adult_mean - adult_sd,
+            adult_lwr = replace(adult_lwr, adult_lwr < 0, 0),
+            adult_upr = adult_mean + adult_sd)
+
+
+#Calculating an average for the null no predation scenario to compare other scenarios too
+
+null_scenario <- extirp_summ %>% 
+  filter(chick_predation == 0 & adult_predation == 0) %>% 
+  filter(ticks > 100) %>% 
+  group_by(island_id) %>% 
+  summarise(mean_count = mean(adult_mean))
+
+ggplot(extirp_summ,
+       aes(x = ticks, y = adult_mean,
+           colour = predators,
+           group = interaction(chick_predation,
+                               adult_predation,
+                               island_id))) +
+
+  
+  geom_ribbon(aes(ymin = adult_lwr, 
+                  ymax = adult_upr,
+                  fill = predators,
+                  colour = predators),
+              alpha = 0.7) + 
+  
+  geom_line(aes(linetype = predators),
+            colour = "black") +
+  
+  geom_hline(aes(yintercept = 40750),
+             colour = "#ff960f",
+             linetype = "dotdash",
+             linewidth = 0.5) +
+  
+  scale_colour_manual(values = c("#F21A00","#3B9AB2"), 
+                      name = "Predator Status") +
+  scale_fill_manual(values = c("#F21A00","#3B9AB2"), 
+                      name = "Predator Status") +
+  
+  scale_linetype_manual(values = c("solid", "dashed"), 
+                    name = "Island Status") +
+  
+  labs(y = "Mean Adult Count", x = "Years") +
+  
+  scale_x_continuous(breaks = seq(0, 500, by = 100)) +
+  
+  facet_grid(chick_predation ~ adult_predation) + 
+  
+  theme_bw() +
+  
+  theme(axis.text = element_text(size = 12),
+        axis.text.x = element_text(angle = 90),
+        axis.title = element_text(size = 14),
+        strip.text = element_text(size = 12),
+        legend.text = element_text(size = 12),
+        legend.title = element_text(size = 14),
+        panel.grid = element_blank())
+
+
+#Calculate the time to the predator invaded island reaching (min time, max time, mean time for each scenario)
