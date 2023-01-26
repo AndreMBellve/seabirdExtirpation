@@ -219,40 +219,117 @@ extirp_df <-  vroom("./output/extirpation_simulation/extirp_allrun_data.csv") %>
 
 # Graphing ----------------------------------------------------------------
 
-seaPal <- wesanderson::wes_palette("FantasticFox1")[c(4,3, 1)] 
-#c("#440154FF",  "#FDE725FF")
-#viridis(n = 2, begin = 0.2)
-
-ggplot(extirp_df[sample(n = 10^4, 1:180000),],
-  aes(x = ticks, y = adult_count,
-    colour = predators,
-    group = interaction(run_number,  island_id))) +
-  
-  geom_line(linewidth = 0.8) +
-  scale_colour_manual(values = seaPal, 
-                      name = "Predation") +
-  
-  labs(y = "Adults (Count)", x = "Years") +
-  #xlim(c(5, 100)) +
-  
- 
-  
- facet_grid(chick_pred_isl_1 ~ adult_pred_isl_1) +
-theme_minimal() +
-theme(axis.text = element_text(size = 12, colour = "white"),
-      axis.title = element_text(size = 14, colour = "white"),
-      strip.text = element_text(size = 12, colour = "white"),
-      legend.text = element_text(size = 12, colour = "white"),
-      legend.title = element_text(size = 14, colour = "white"),
-      panel.grid = element_blank())
-
+# seaPal <- wesanderson::wes_palette("FantasticFox1")[c(4,3, 1)] 
+# #c("#440154FF",  "#FDE725FF")
+# #viridis(n = 2, begin = 0.2)
+# 
+# ggplot(extirp_df,
+#   aes(x = ticks, y = adult_count,
+#     colour = predators,
+#     group = interaction(run_number,  island_id))) +
+#   
+#   geom_line(linewidth = 0.8) +
+#   scale_colour_manual(values = seaPal, 
+#                       name = "Predation") +
+#   
+#   labs(y = "Adults (Count)", x = "Years") +
+#   #xlim(c(5, 100)) +
+#   
+#  
+#   
+#  facet_grid(chick_pred_isl_1 ~ adult_pred_isl_1) +
+# theme_minimal() +
+# theme(axis.text = element_text(size = 12, colour = "white"),
+#       axis.title = element_text(size = 14, colour = "white"),
+#       strip.text = element_text(size = 12, colour = "white"),
+#       legend.text = element_text(size = 12, colour = "white"),
+#       legend.title = element_text(size = 14, colour = "white"),
+#       panel.grid = element_blank())
+# 
 
 #Saving
 # ggsave("./graphs/persistance.png",
 #        width = 9.9, height = 5.5)
 
 
+#Calculate the time to the predator invaded island reaching (min time, max time, mean time for each scenario)
 
+#End of run mean meta-population sums
+end_counts <- extirp_df %>% 
+  filter(ticks == 500) %>% 
+  group_by(chick_predation, adult_predation, predators) %>% 
+  summarise(end_mean = round(mean(adult_count),
+                             digits = 0),
+            end_sd = round(sd(adult_count), 
+                           digits = 0)) %>% 
+  ungroup() %>% 
+  group_by(chick_predation, adult_predation) %>% 
+  summarise(end_mean_sum = sum(end_mean),
+            end_mean_sd = round(mean(end_sd), 0)) %>% 
+  mutate(end_est = paste(end_mean_sum, 
+                         end_mean_sd, 
+                         sep = " ± "))
+end_counts
+
+
+extir_point <- extirp_df %>% 
+  filter(predators == "Present") %>% 
+  mutate(extirp = ifelse(adult_count < 50, 
+                          TRUE, 
+                          FALSE),
+         pseudo_ext = ifelse(adult_count < 500 & adult_count > 50, 
+                             TRUE, 
+                             FALSE)) %>%
+  filter(extirp) %>% 
+  group_by(chick_predation, adult_predation, run_id) %>% 
+  arrange(ticks, .by_group = TRUE) %>% 
+  slice_head() %>% 
+  ungroup() %>% 
+  group_by(chick_predation, adult_predation) %>% 
+  summarise(time_to_ext_5 = round(quantile(ticks, 0.05), 
+                                  digits = 1),
+            time_to_ext_95 = round(quantile(ticks, 0.95), 
+                                   digits = 1),
+            median_time_to_ext = median(ticks), 
+            prop_ext = n()) 
+extir_point
+
+
+psuedo_ext_point <- extirp_df %>% 
+  filter(predators == "Present") %>% 
+  mutate(extirp = ifelse(adult_count < 50, 
+                         TRUE, 
+                         FALSE),
+         pseudo_ext = ifelse(adult_count < 500 & adult_count > 50, 
+                             TRUE, 
+                             FALSE)) %>%
+  filter(pseudo_ext) %>% 
+  group_by(chick_predation, adult_predation, run_id) %>% 
+  arrange(ticks, .by_group = TRUE) %>% 
+  slice_head() %>% 
+  ungroup() %>% 
+  group_by(chick_predation, adult_predation) %>% 
+  summarise(time_to_psuedo_5 = round(quantile(ticks, 0.05), 
+                                  digits = 1),
+            time_to_psuedo_95 = round(quantile(ticks, 0.95), 
+                                   digits = 1),
+            median_time_to_psuedo = median(ticks),
+            prop_psuedo_ext = n()) 
+
+psuedo_ext_point
+
+
+extirpation_summary <- end_counts %>% 
+  left_join(extir_point) %>% 
+  #left_join(psuedo_ext_point) %>% 
+  mutate(time_prop = paste0(median_time_to_ext,"y", " | ", prop_ext,"%"),
+         time_prop = replace(time_prop, is.na(prop_ext), ""))
+
+write.csv(extirpation_summary, "./output/extirpation_simulations/extirpation_summary.csv")
+# %>% 
+#   mutate(end_est = paste(end_mean_sum, 
+#                          end_mean_sd, 
+#                          sep = " ± "))
 
 #
 extirp_summ <- extirp_df %>% 
@@ -286,6 +363,12 @@ ggplot(extirp_summ,
                   colour = predators),
               alpha = 0.7) + 
   
+  geom_text(data = extirpation_summary,
+            mapping = aes(x = Inf, y = Inf, label = time_prop,
+                          group = NULL, colour = NULL),
+            hjust = 1.05,
+            vjust = 1.5) +
+  
   geom_line(aes(linetype = predators),
             colour = "black") +
   
@@ -300,9 +383,9 @@ ggplot(extirp_summ,
                       name = "Predator Status") +
   
   scale_linetype_manual(values = c("solid", "dashed"), 
-                    name = "Island Status") +
+                    name = "Predator Status") +
   
-  labs(y = "Mean Adult Count", x = "Years") +
+  labs(y = "Breeding Pairs", x = "Years") +
   
   scale_x_continuous(breaks = seq(0, 500, by = 100)) +
   
@@ -318,5 +401,6 @@ ggplot(extirp_summ,
         legend.title = element_text(size = 14),
         panel.grid = element_blank())
 
+ggsave("./graphs/extirpation_simulations/predation_effects.png",
+       width = 18.5, height = 9.2)
 
-#Calculate the time to the predator invaded island reaching (min time, max time, mean time for each scenario)
