@@ -1,6 +1,9 @@
 #Script to automate the local sensitivity analysis for the collapse model
 
-# Simulation Libraries ----------------------------------------------------------------
+# Simulation --------------------------------------------------------------
+
+
+## Simulation Libraries ----------------------------------------------------------------
 #Simple data manipulation
 library(dplyr)
 library(stringr) #String tidying for setup file reading
@@ -9,7 +12,7 @@ library(stringr) #String tidying for setup file reading
 library(nlrx)
 library(future)
 
-# NL setup ----------------------------------------------------------------
+## NL setup ----------------------------------------------------------------
 #Where netlogo exe is stored...
 netlogopath <- file.path("C:/Program Files/NetLogo 6.2.2")
 
@@ -25,7 +28,7 @@ collapse_nl <- nl(nlversion = "6.2.2",
                   modelpath = modelpath,
                   jvmmem = 1024)
 
-# Variable creation ----------------------------------------------------
+## Variable creation ----------------------------------------------------
 # Creating a list of variables defaults to feed into the experiment one line at a time.
 default_ls <- list(
   #Actual testing variables
@@ -180,7 +183,7 @@ if(any(names(default_ls[1:length(lsa_ls)]) != names(lsa_ls))){
 }
 
 
-# LSA experiment setup ----------------------------------------------------
+## LSA experiment setup ----------------------------------------------------
 #Creating an empty list to fill with the LSA results.
 lsa_results <- list()
 
@@ -220,7 +223,7 @@ for(i in seq_along(lsa_ls)){
   )
   
   
-  # Simulation design -------------------------------------------------------
+  ## Simulation design -------------------------------------------------------
  #Creating the simulation design - the nseeds is the number of replicates to do of each parameter set.
    collapse_nl@simdesign <- simdesign_distinct(nl = collapse_nl,
                                                nseeds = 100)
@@ -230,7 +233,7 @@ for(i in seq_along(lsa_ls)){
   #eval_variables_constants(collapse_nl)
   #Nothing should be defined for either output-file-name (this is a manual trigger when using the NetLogo Interface) or nlrx-id - this widget get's filled by nlrx while experimenting
   
-  # Simulation run -----------------------------------------------------------
+  ## Simulation run -----------------------------------------------------------
   
   #Setting up parallelisation
   plan(multisession)
@@ -268,7 +271,7 @@ length(unlist(lsa_ls))
 
 # LSA Analysis ------------------------------------------------------------
 
-# Analysis Libraries ------------------------------------------------------
+## Analysis Libraries ------------------------------------------------------
 #Data manipulations
 library(readr) #reading in all files
 library(vroom)
@@ -277,6 +280,7 @@ library(dplyr) #Data manipulations
 library(tidyr) #Pivoting
 library(stringr) #Parsing data
 library(zoo) #Calculating cumulative statistics
+library(forcats)
 
 #Graphing
 library(ggplot2) #Plots
@@ -288,7 +292,7 @@ library(tictoc)
 #https://stackoverflow.com/questions/52459711/how-to-find-cumulative-variance-or-standard-deviation-in-r
 source("./scripts/functions/cumvar.r")
 
-# Reading in data ---------------------------------------------------------
+## Reading in data ---------------------------------------------------------
 
 # Reading in files
 # tic("Reading individual files")
@@ -443,14 +447,126 @@ lsa_50ysum_df <- vroom("./output/local_sensitivity_analysis/lsa_allrun_data.csv"
          output_change = abs(adult_mean - baseline_abund) / baseline_abund,
          proportional_change = output_change / input_change)
 
-#Plotting the proportional change
-ggplot(filter(lsa_50ysum_df, state != "Default" & !is.na(state)), 
-              aes(y = proportional_change, x = state)) +
-  geom_boxplot() + 
-  geom_point() +  
-  geom_hline(yintercept = 1, linetype = "dashed", colour = "blue") + 
-  geom_hline(yintercept = 1.5, linetype = "dotdash", colour = "red") + 
-  facet_wrap(~varying_param)
+# #Plotting the proportional change
+# ggplot(filter(lsa_50ysum_df, state != "Default" & !is.na(state)), 
+#               aes(y = proportional_change, x = state)) +
+#   
+#   geom_boxplot() + 
+#   
+#   geom_point() +  
+#   
+#   geom_hline(yintercept = 1, linetype = "dashed", colour = "blue") + 
+#   geom_hline(yintercept = 1.5, linetype = "dotdash", colour = "red") + 
+#   facet_wrap(~varying_param) + 
+#   
+#  labs(y = "Proportional Change", x = "Variable State") + 
+#   
+#   
+#   
+#   theme(axis.text = element_text(size = 14),
+#         axis.title = element_text(size = 16),
+#         
+#         legend.title = element_text(size = 16),
+#         legend.text = element_text(size = 14))
+#   
+#   
+  #Plotting the proportional change
+lsa_50ymedian_df <- lsa_50ysum_df %>% 
+    
+    #Reducing it to just up/down
+    filter(state != "Default" & !is.na(state)) %>% 
+    
+    #Recoding for tidyness
+    mutate(state_tidy = ifelse(state == "Up", 
+                               "Increased", 
+                               "Decreased")) %>% 
+    #Calculating mean change
+    group_by(state_tidy, varying_param) %>% 
+    
+    summarise(median_prop_change = median(proportional_change, na.rm = TRUE)) %>%
+    
+    ungroup() %>% 
+    
+    mutate(parameter = fct_recode(varying_param,
+                                  "Initial Adult Population" = "adpop",
+                     "Adult Mortality (mean)" = "adult_mortality",
+                     "Adult Mortality (s.d.)" = "adult_mortality_sd",
+                     "Adult Predation (mean)" = "adultp",
+                     
+                     "Juvenile Mortality Predation (mean)" = "juvenile_mortality",      
+                     "Juvenile Mortality Predation (s.d.)" = "juvenile_mortality_sd",  
+                     
+                     "Breeding Age" = "age_at_first_breeding",
+                     "Burrow Attrition Rate" = "burrow_attrition_rate",
+                     "Chick Mortality (mean)" = "natural_chick_mortality",
+                     "Chick Mortality (s.d.)" = "chick_mortality_sd",
+                     "Chick Predation (mean)" = "chickp",
+                     "Island Radius" = "clust",
+                     "Burrow Count for 50% Collapse Chance" = "collapse_half_way",
+                     "Percent Burrows Collapse (mean)" = "collapse_perc",
+                     "Percent Burrows Collapse (s.d.)" =  "collapse_perc_sd",
+                     "Initial Burrow Diffusion (%)" = "diffusion_prop",          
+                     "Emigrate out of System (%)" = "emig_out_prob",
+                     "Emigration Curve Steepness" = "emigration_curve",
+                     "Max Intra-system Emigration Attempts" = "emigration_max_attempts",
+                     "Failed Breeding Attempts before Emigration" = "emigration_timer",
+                     "Adult ENSO Mortality (mean)" = "enso_adult_mort",
+                     "Chick ENSO Mortality (mean)" = "enso_breed_impact",
+                     "Natal Philopatry Probability (mean)" = "female_philopatry",
+                     "Initial Aggregation of Quality habitat" = "habagg",
+                    "Initial Burrow Count of High Quality Habitat" = "highlam",
+                    
+                    "Initial Burrow Count of Low Quality Habitat" = "lowlam",
+                    "Initial Juvenile Population" = "juvpop",
+                    "Age at Senecense" = "max_age",
+                    "Maximum Courtship Attempts" = "max_tries",
+                    "Neighbourhood Radius" = "nhb_rad",
+                    "Mortality at Senecence" = "old_mortality",
+                    "Patch Burrow Upper Limit" =   "patch_burrow_limit", 
+                    "Patch Burrow Upper Limit" = "patch_burrow_minimum",
+                    "Proportion of Returning Breeders" = "prop_returning_breeders",
+                    "Proportion of Suitable Habitat on Island" = "propsuit",
+                    "Individual count for 50% Emigration Chance" = "raft_half_way",
+                    "Sex Ratio (Male:Female)" = "sex_ratio",
+                    "Burrow Prospecting Time" = "time_to_prospect"),
+           parameter = fct_reorder(.f = parameter,
+                                   .x = median_prop_change,
+                                   .fun = mean,
+                                   .desc = TRUE)) 
+  
+    
+    
+#Plotting the sensitivity of parameters
+ggplot(lsa_50ymedian_df, 
+       aes(y = median_prop_change, 
+           x = parameter)) +
+    
+    geom_point(aes(colour = state_tidy),
+               size = 2) +  
+    
+    scale_colour_manual(values = c("#f5840e",
+                                   "#007F5C"),
+                        name = "Parameter State") +
+
+    geom_hline(yintercept = 1, 
+               linetype = "solid", 
+               colour = "black") + 
+  
+    geom_hline(yintercept = 1.5, 
+               linetype = "dotdash", 
+               colour = "red") + 
+    
+    labs(y = "Median Proportional Change", 
+         x = "Parameter") +
+    
+    theme_bw() +
+    theme(axis.text = element_text(size = 12, 
+                                   angle = 90),
+          axis.title = element_text(size = 14),
+          legend.title = element_text(size = 14),
+          legend.text = element_text(size = 12))
+  
+ggsave("./graphs/local_sensitivity_analysis/median_prop_change.png")
 
 #Summary of proportional change by variable
 prop_change_summ <- lsa_50ysum_df %>% 
@@ -549,7 +665,7 @@ lsa_50ysum_df %>%
 
 
 
-# Island attractiveness ---------------------------------------------------
+## Island attractiveness ---------------------------------------------------
 #Reading in combined files
 isl_att_df <- vroom("./output/local_sensitivity_analysis/lsa_allrun_data.csv") %>% 
   #Reducing this to just the last 50 years of data to summarise over.
@@ -612,9 +728,9 @@ isl_att_df %>%
 
 
 
-# ENSO response -----------------------------------------------------------
+## ENSO response -----------------------------------------------------------
 
-# ENSO breeding impact ----------------------------------------------------
+## ENSO breeding impact ----------------------------------------------------
 #Reading in combined files
 enso_breed_df <- vroom("./output/local_sensitivity_analysis/lsa_allrun_data.csv") %>% 
   #Reducing this to just the last 50 years of data to summarise over.
@@ -700,7 +816,7 @@ enso_breed_df %>%
 
 
 
-# ENSO adult mortality ----------------------------------------------------
+## ENSO adult mortality ----------------------------------------------------
 #Reading in combined files
 enso_adult_df <- vroom("./output/local_sensitivity_analysis/lsa_allrun_data.csv") %>% 
   #Reducing this to just the last 50 years of data to summarise over.
@@ -788,7 +904,7 @@ enso_adult_df %>%
 
 
 ggplot(lsa_50ysum_df, aes(y = prop_change, x = state)) +
-# Calculating variable-response change ------------------------------------
+## Calculating variable-response change ------------------------------------
 
 
 
