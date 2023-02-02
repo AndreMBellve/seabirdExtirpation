@@ -142,6 +142,9 @@ end
 ;;Initialising the values from the csv for the patches
 to init-isl-from-file
    
+  
+  
+  
   ;;carefully - wrap this function to fail gracefully if there is no file that can be loaded.
   let init-data csv:from-file initialisation-data
 
@@ -156,6 +159,8 @@ to init-isl-from-file
   ;Sequence of 1 to number of islands to be run the foreach loop
   let isl-seq  (range num-islands)
   
+  
+  
   ;;Creating island blobs
   foreach isl-seq [ i ->
     
@@ -166,7 +171,7 @@ to init-isl-from-file
     let isl-area clust-area
     
     ;;Creating island foundation
-    grow-islands isl-area
+    ;;grow-islands isl-area
     
     ask patches with [ pcolor = green and colony-id = 0 ]
     [
@@ -197,30 +202,30 @@ to init-isl-from-file
   init-habitat
 end
 
-to grow-islands [isl-radius] ;;Creating islands and colonies
-  
-  let map-max-y max-pycor - isl-radius
-  let map-max-x max-pxcor - isl-radius
-  let map-min-y min-pycor + isl-radius
-  let map-min-x min-pxcor + isl-radius 
-  
-  ask one-of patches with [ count patches with [ pcolor = green ] in-radius (isl-radius + 1)  = 0 and pycor < map-max-y and pycor > map-min-y and pxcor < map-max-x and pxcor > map-min-x ] ;Bouncing off edge of world
-  [
-    let cluster patches in-radius isl-radius ;creating patch-set of the cluster
-    
-    ;;Setting seed patches parameters
-    set pcolor green
-    set habitable? TRUE ;setting this to be desireable habitat for the turtle
-    
-    ;;Setting surround patches parameters
-    ask cluster ;expanding the patch as a function of density and user defined area
-    [
-      set pcolor green
-      set habitable? TRUE ;see above for this line and the one below
-    ]
-  ]  
-  
-end
+;to grow-islands [isl-radius] ;;Creating islands and colonies
+;  
+;  let map-max-y max-pycor - isl-radius
+;  let map-max-x max-pxcor - isl-radius
+;  let map-min-y min-pycor + isl-radius
+;  let map-min-x min-pxcor + isl-radius 
+;  
+;  ask one-of patches with [ count patches with [ pcolor = green ] in-radius (isl-radius + 1)  = 0 and pycor < map-max-y and pycor > map-min-y and pxcor < map-max-x and pxcor > map-min-x ] ;Bouncing off edge of world
+;  [
+;    let cluster patches in-radius isl-radius ;creating patch-set of the cluster
+;    
+;    ;;Setting seed patches parameters
+;    set pcolor green
+;    set habitable? TRUE ;setting this to be desireable habitat for the turtle
+;    
+;    ;;Setting surround patches parameters
+;    ask cluster ;expanding the patch as a function of density and user defined area
+;    [
+;      set pcolor green
+;      set habitable? TRUE ;see above for this line and the one below
+;    ]
+;  ]  
+;  
+;end
 
 to crt-patchsets
   

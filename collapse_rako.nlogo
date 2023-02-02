@@ -4,6 +4,7 @@ extensions
   rnd ;;distribution functions
   profiler ;;profiling to detect bottlenecks
   stats ;;beta distribution pdf
+  gis ;;reading in real world maps
   ;;string ;;String functions
   ;rnetlogo
 ]
@@ -18,6 +19,10 @@ __includes
 
 globals
 [
+  ;;Island maps
+  habitat-dataset
+  island-id-dataset
+
   ;;Patch-sets
   num-islands ;;A single element list with the number of islands
   the-islands ;;Patch-set of all the island patches
@@ -174,6 +179,16 @@ breed ; convience name
 to setup
 
   clear-all
+
+  ;;Initialising the island datasets
+  set habitat-dataset gis:load-dataset "./data/rako_simulation/abm_habitat_values.asc"
+  set island-id-dataset gis:load-dataset "./data/rako_simulation/abm_isl_id.asc"
+
+  ; Set the world envelope to the union of all of our dataset's envelopes
+  gis:set-world-envelope (gis:envelope-union-of (gis:envelope-of habitat-dataset)
+                                                (gis:envelope-of island-id-dataset))
+
+
   reset-ticks
 
   ;;Checking if it is a nlrx run or not as the seed will be set by nlrx if it is
@@ -408,7 +423,7 @@ natural-chick-mortality
 natural-chick-mortality
 0
 1
-0.37
+0.39
 0.01
 1
 NIL
