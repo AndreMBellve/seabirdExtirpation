@@ -349,15 +349,15 @@ extTime_pdp_plots_clean <- extTime_pdp_plots_clean %>%
                       "clust_area" = "Island Radius",
                       "collapse_half_way" = "Collapse 50% Threshold",
                       "emig_out_prob" = "Emigrate out of System (%)",
-                      "emigration_timer" =  "Successive Failed Breeding Tries" ,
+                      "emigration_timer" =  "Failed Courtships before Emigration Attempt" ,
                       "female_philopatry" = "Female Philopatry",
                       "habitat_aggregation" = "Habitat Aggregation",
                       "max_age" = "Senior Mortality Age",
                       "max_tries" = "Maximum Courting Attempts",
-                      "natural_chick_mortality" = "Natural Chick Mortality",
+                      "natural_chick_mortality" = "Chick Mortality (mean)",
                       "prop_returning_breeders" = "Proportion of Breeders Returning",
                       "prop_suitable" = "Proportion of Suitable Habitat",
-                      "sex_ratio" = "Sex Ratio"))
+                      "sex_ratio" = "Sex Ratio (Male:Female)"))
 
 
 extTime_pdp_var_imp <- extTime_pdp_var_imp %>%
@@ -366,15 +366,15 @@ extTime_pdp_var_imp <- extTime_pdp_var_imp %>%
                       "clust_area" = "Island Radius",
                       "collapse_half_way" = "Collapse 50% Threshold",
                       "emig_out_prob" = "Emigrate out of System (%)",
-                      "emigration_timer" =  "Successive Failed Breeding Tries" ,
+                      "emigration_timer" =  "Failed Courtships before Emigration Attempt" ,
                       "female_philopatry" = "Female Philopatry",
                       "habitat_aggregation" = "Habitat Aggregation",
                       "max_age" = "Senior Mortality Age",
                       "max_tries" = "Maximum Courting Attempts",
-                      "natural_chick_mortality" = "Natural Chick Mortality",
+                      "natural_chick_mortality" = "Chick Mortality (mean)",
                       "prop_returning_breeders" = "Proportion of Breeders Returning",
                       "prop_suitable" = "Proportion of Suitable Habitat",
-                      "sex_ratio" = "Sex Ratio"))
+                      "sex_ratio" = "Sex Ratio (Male:Female)"))
 
 
 # fix var order for plotting
@@ -485,15 +485,15 @@ popsize_pdp_plots_clean <- popsize_pdp_plots_clean %>%
                       "clust_area" = "Island Radius",
                       "collapse_half_way" = "Collapse 50% Threshold",
                       "emig_out_prob" = "Emigrate out of System (%)",
-                      "emigration_timer" =  "Successive Failed Breeding Tries" ,
+                      "emigration_timer" =  "Failed Courtships before Emigration Attempt" ,
                       "female_philopatry" = "Female Philopatry",
                       "habitat_aggregation" = "Habitat Aggregation",
                       "max_age" = "Senior Mortality Age",
                       "max_tries" = "Maximum Courting Attempts",
-                      "natural_chick_mortality" = "Natural Chick Mortality",
+                      "natural_chick_mortality" = "Chick Mortality (mean)",
                       "prop_returning_breeders" = "Proportion of Breeders Returning",
                       "prop_suitable" = "Proportion of Suitable Habitat",
-                      "sex_ratio" = "Sex Ratio"))
+                      "sex_ratio" = "Sex Ratio (Male:Female)"))
 
 
 popsize_pdp_var_imp <- popsize_pdp_var_imp %>%
@@ -502,15 +502,15 @@ popsize_pdp_var_imp <- popsize_pdp_var_imp %>%
                       "clust_area" = "Island Radius",
                       "collapse_half_way" = "Collapse 50% Threshold",
                       "emig_out_prob" = "Emigrate out of System (%)",
-                      "emigration_timer" =  "Successive Failed Breeding Tries" ,
+                      "emigration_timer" =  "Failed Courtships before Emigration Attempt" ,
                       "female_philopatry" = "Female Philopatry",
                       "habitat_aggregation" = "Habitat Aggregation",
                       "max_age" = "Senior Mortality Age",
                       "max_tries" = "Maximum Courting Attempts",
-                      "natural_chick_mortality" = "Natural Chick Mortality",
+                      "natural_chick_mortality" = "Chick Mortality (mean)",
                       "prop_returning_breeders" = "Proportion of Breeders Returning",
                       "prop_suitable" = "Proportion of Suitable Habitat",
-                      "sex_ratio" = "Sex Ratio"))
+                      "sex_ratio" = "Sex Ratio (Male:Female)"))
 
 
 # fix var order for plotting
@@ -604,15 +604,15 @@ popsize_pdp_plots_clean <- popsize_pdp_plots_clean %>%
                       "clust_area" = "Island Radius",
                       "collapse_half_way" = "Collapse 50% Threshold",
                       "emig_out_prob" = "Emigrate out of System (%)",
-                      "emigration_timer" =  "Successive Failed Breeding Tries" ,
+                      "emigration_timer" =  "Failed Courtships before Emigration Attempt" ,
                       "female_philopatry" = "Female Philopatry",
                       "habitat_aggregation" = "Habitat Aggregation",
                       "max_age" = "Senior Mortality Age",
                       "max_tries" = "Maximum Courting Attempts",
-                      "natural_chick_mortality" = "Natural Chick Mortality",
+                      "natural_chick_mortality" = "Chick Mortality (mean)",
                       "prop_returning_breeders" = "Proportion of Breeders Returning",
                       "prop_suitable" = "Proportion of Suitable Habitat",
-                      "sex_ratio" = "Sex Ratio"))
+                      "sex_ratio" = "Sex Ratio (Male:Female)"))
 
 
 popsize_pdp_var_imp <- popsize_pdp_var_imp %>%
@@ -621,15 +621,15 @@ popsize_pdp_var_imp <- popsize_pdp_var_imp %>%
                       "clust_area" = "Island Radius",
                       "collapse_half_way" = "Collapse 50% Threshold",
                       "emig_out_prob" = "Emigrate out of System (%)",
-                      "emigration_timer" =  "Successive Failed Breeding Tries" ,
+                      "emigration_timer" =  "Failed Courtships before Emigration Attempt" ,
                       "female_philopatry" = "Female Philopatry",
                       "habitat_aggregation" = "Habitat Aggregation",
                       "max_age" = "Senior Mortality Age",
                       "max_tries" = "Maximum Courting Attempts",
-                      "natural_chick_mortality" = "Natural Chick Mortality",
+                      "natural_chick_mortality" = "Chick Mortality (mean)",
                       "prop_returning_breeders" = "Proportion of Breeders Returning",
                       "prop_suitable" = "Proportion of Suitable Habitat",
-                      "sex_ratio" = "Sex Ratio"))
+                      "sex_ratio" = "Sex Ratio (Male:Female)"))
 
 
 # fix var order for plotting
@@ -782,15 +782,15 @@ gsa_state_1_df <- gsa_df %>%
 #                       "clust_area" = "Island Radius",
 #                       "collapse_half_way" = "Collapse 50% Threshold",
 #                       "emig_out_prob" = "Emigrate out of System (%)",
-#                       "emigration_timer" =  "Successive Failed Breeding Tries" ,
+#                       "emigration_timer" =  "Failed Courtships before Emigration Attempt" ,
 #                       "female_philopatry" = "Female Philopatry",
 #                       "habitat_aggregation" = "Habitat Aggregation",
 #                       "max_age" = "Senior Mortality Age",
 #                       "max_tries" = "Maximum Courting Attempts",
-#                       "natural_chick_mortality" = "Natural Chick Mortality",
+#                       "natural_chick_mortality" = "Chick Mortality (mean)",
 #                       "prop_returning_breeders" = "Proportion of Breeders Returning",
 #                       "prop_suitable" = "Proportion of Suitable Habitat",
-#                       "sex_ratio" = "Sex Ratio"))
+#                       "sex_ratio" = "Sex Ratio (Male:Female)"))
 # 
 # 
 # popState_pdp_var_imp <- popState_pdp_var_imp %>%
@@ -799,15 +799,15 @@ gsa_state_1_df <- gsa_df %>%
 #                       "clust_area" = "Island Radius",
 #                       "collapse_half_way" = "Collapse 50% Threshold",
 #                       "emig_out_prob" = "Emigrate out of System (%)",
-#                       "emigration_timer" =  "Successive Failed Breeding Tries" ,
+#                       "emigration_timer" =  "Failed Courtships before Emigration Attempt" ,
 #                       "female_philopatry" = "Female Philopatry",
 #                       "habitat_aggregation" = "Habitat Aggregation",
 #                       "max_age" = "Senior Mortality Age",
 #                       "max_tries" = "Maximum Courting Attempts",
-#                       "natural_chick_mortality" = "Natural Chick Mortality",
+#                       "natural_chick_mortality" = "Chick Mortality (mean)",
 #                       "prop_returning_breeders" = "Proportion of Breeders Returning",
 #                       "prop_suitable" = "Proportion of Suitable Habitat",
-#                       "sex_ratio" = "Sex Ratio"))
+#                       "sex_ratio" = "Sex Ratio (Male:Female)"))
 # 
 # 
 # # fix var order for plotting

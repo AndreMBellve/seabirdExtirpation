@@ -502,7 +502,7 @@ lsa_50ymedian_df <- lsa_50ysum_df %>%
                      "Chick Mortality (s.d.)" = "chick_mortality_sd",
                      "Chick Predation (mean)" = "chickp",
                      "Island Radius" = "clust",
-                     "Burrow Count for 50% Collapse Chance" = "collapse_half_way",
+                     "Collapse 50% Threshold" = "collapse_half_way",
                      "Percent Burrows Collapse (mean)" = "collapse_perc",
                      "Percent Burrows Collapse (s.d.)" =  "collapse_perc_sd",
                      "Initial Burrow Diffusion (%)" = "diffusion_prop",          

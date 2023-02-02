@@ -346,8 +346,18 @@ extirp_summ <- extirp_df %>%
 null_scenario <- extirp_summ %>% 
   filter(chick_predation == 0 & adult_predation == 0) %>% 
   filter(ticks > 100) %>% 
+  ungroup() %>% 
+  #group_by(island_id) %>% 
+  summarise(mean_count = mean(adult_mean),
+            sd_count = sd(adult_mean))
+
+
+baseline_conditions <- extirp_summ %>% 
+  filter(chick_predation == 0.5 & adult_predation == 0.05) %>%
+  filter(ticks > 400) %>% 
   group_by(island_id) %>% 
-  summarise(mean_count = mean(adult_mean))
+  summarise(mean_count = mean(adult_mean),
+            sd_count = sd(adult_mean))
 
 ggplot(extirp_summ,
        aes(x = ticks, y = adult_mean,
@@ -377,15 +387,15 @@ ggplot(extirp_summ,
              linetype = "dotdash",
              linewidth = 0.5) +
   
-  scale_colour_manual(values = c("#F21A00","#3B9AB2"), 
+  scale_colour_manual(values = c("#3B9AB2","#F21A00"), 
                       name = "Predator Status") +
-  scale_fill_manual(values = c("#F21A00","#3B9AB2"), 
+  scale_fill_manual(values = c("#3B9AB2","#F21A00"), 
                       name = "Predator Status") +
   
   scale_linetype_manual(values = c("solid", "dashed"), 
                     name = "Predator Status") +
   
-  labs(y = "Breeding Pairs", x = "Years") +
+  labs(y = "# of Adult Females", x = "Years") +
   
   scale_x_continuous(breaks = seq(0, 500, by = 100)) +
   
