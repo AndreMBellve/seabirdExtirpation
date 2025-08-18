@@ -1,0 +1,501 @@
+to set-defaults
+  
+  ;;Meta-model settings
+  set debug? false
+  set verbose? false
+  set profiler? false
+  set update-colour? false
+  
+  ;;Island creation
+  set diffusion-prop 0.4
+  
+  ;Bird search area
+  set nhb-rad 4 ;;Assumed knowledge radius of 450 metres
+  set max-tries 6
+  
+  ;;Philopatry and Emigration
+  set age-at-first-breeding 6
+
+  set sex-ratio 1
+  set female-philopatry 0.98
+  
+  set prop-returning-breeders 0.95
+  
+  set emigration-timer 4
+  set emig-out-prob 0.8
+  set raft-half-way 500
+  set emigration-curve 0.05
+  set emigration-max-attempts 2
+  
+  
+  ;;Mortality effects
+  set chick-mortality 0.4
+  set chick-mortality-sd 0.1
+  
+  set juvenile-mortality 0.65
+  set juvenile-mortality-sd 0.05
+  
+  set adult-mortality 0.05
+  set adult-mortality-sd 0.01
+  
+  set max-age 28
+  set old-mortality 0.8
+  
+  ;;Meta parameters
+  ;;Island selection
+  set isl-att-curve "beta2"
+  
+  ;;Climate variation in mortality and breeding
+  set enso? true
+  set enso-breed-impact "[0.5 0.2 0 0.2 0.5]"
+  set enso-adult-mort "[0.25 0.1 0 0.1 0.25]"
+  
+  ;;Habitat controls
+  set attrition? true
+  set prospect? true
+  set collapse? true
+  
+  set burrow-attrition-rate 0.2
+  set patch-burrow-limit 100
+  set collapse-half-way 150
+  set collapse-perc 0.3
+  set collapse-perc-sd 0.05
+  
+  ;;Capture data from model runs
+  set capture-data? true
+  set nlrx? false
+  set behav? true
+  
+end
+
+;;Initialising the list with column names for all the values that will be collected during the census at the end of each year
+to init-census-data
+  
+  ;;By island data
+  set island-series []
+  
+  ;;ct = count
+  let variable-names (list "juv_live_ct" "juv_dead_ct" "new_adult_ct" "philo_suc_ct" "philo_fail_ct" "emig_src_ct" "emig_ct" "emig_att" "male_ct" "settled_ct" "mating_ct" "breed_suc_ct" "chick_pred" "adult_mort_ct" "adult_pred" "attrition_ct" "prospect_ct" "collapse_ct" "burrow_ct" "isl_att" )
+  let n-vars n-values length variable-names [ n -> n]
+  
+  ;;Initialising the header names
+  foreach n-vars [ n -> 
+    
+    ;;Selecting the variable 
+    let var item n variable-names
+    
+    ifelse var = "philo-fail-ct" or var = "emig_att" or var = "emig_ct" or var = "isl_att" ;; these two have one more value than the number of islands (leaving system value)...
+    [
+      
+      ;;Calling reporter to paste variable names by isl-number
+      let isl-var-names isl-name-paste var
+      set isl-var-names lput (word var "_leave_system") isl-var-names
+      
+      ;;Adding names to the list
+      set island-series lput isl-var-names island-series 
+      
+    ]
+    ;;... when they aren't leaving the system
+    [
+      
+      ;;Calling reporter to paste variable names by isl-number
+      let isl-var-names isl-name-paste var
+      
+      ;;Adding names to the list
+      set island-series lput isl-var-names island-series 
+      
+    ]
+  ]
+  
+  ;;Adding run number for behaviour space and the starting datafile
+  set island-series fput (list "run_id" "enso_state") island-series
+  set island-series lput (list "initialisation_data") island-series
+  
+  
+  ;;Merging to a single list from many
+  set island-series (list reduce sentence island-series)
+  
+  set breeder-isl-counts []
+  
+end
+
+to init-patches ;;Creating default patches and patch-sets (all values set at value for the sea)
+  set pred-islands no-patches 
+  
+  ask patches
+  [
+    set habitable? FALSE
+    set suitable? false 
+    set colony-id 0
+    set habitat-attrac 0
+    set occupancy 0
+    set occupancy-limit 0
+    set predators? false
+    set pcolor 81
+    set neighbourhood no-patches
+  ]
+  ;;Initialising
+  set emig-out 0 
+  
+end
+
+;;Initialising the values from the csv for the patches
+to init-isl-from-file
+   
+  ;;carefully - wrap this function to fail gracefully if there is no file that can be loaded.
+  let init-data csv:from-file initialisation-data
+
+  ;;Getting variable names and number of variables
+  let var-names item 0 init-data
+  let var-num length var-names 
+  let var-values remove-item 0 init-data
+  
+  ;;Number of islands
+  set num-islands length var-values
+  
+  ;Sequence of 1 to number of islands to be run the foreach loop
+  let isl-seq  (range num-islands)
+  
+  ;;Creating island blobs
+  foreach isl-seq [ i ->
+    
+    ;;A subsetted list of the values for this run
+    let isl-values item i var-values
+    
+    ;;How big the island is
+    let isl-area clust-radius
+    
+    ;;Creating island foundation
+    grow-islands isl-area
+    
+    ask patches with [ pcolor = green and colony-id = 0 ]
+    [
+      set colony-id (i + 1)
+    ]
+    
+    let var-seq (range 0 var-num)
+    
+    foreach var-seq [ v ->
+      
+      ;;The name of the variable
+      let po-name item v var-names
+      ;;The value for the variable
+      let po-val item v isl-values
+      
+      ;;Concatonating the command for setting island values     
+      let cmd (word "set " po-name " " po-val)
+      ask patches with [ colony-id = (i + 1) ]
+      [
+        run cmd
+      ]
+    ]
+  ]
+  ;;Creating agentsets of patches
+  crt-patchsets
+  
+  ;;Creating the habitat
+  init-habitat
+end
+
+to grow-islands [isl-radius] ;;Creating islands and colonies
+  
+  let map-max-y max-pycor - isl-radius
+  let map-max-x max-pxcor - isl-radius
+  let map-min-y min-pycor + isl-radius
+  let map-min-x min-pxcor + isl-radius 
+  
+  ask one-of patches with [ count patches with [ pcolor = green ] in-radius (isl-radius + 1)  = 0 and pycor < map-max-y and pycor > map-min-y and pxcor < map-max-x and pxcor > map-min-x ] ;Bouncing off edge of world
+  [
+    let cluster patches in-radius isl-radius ;creating patch-set of the cluster
+    
+    ;;Setting seed patches parameters
+    set pcolor green
+    set habitable? TRUE ;setting this to be desireable habitat for the turtle
+    
+    ;;Setting surround patches parameters
+    ask cluster ;expanding the patch as a function of density and user defined area
+    [
+      set pcolor green
+      set habitable? TRUE ;see above for this line and the one below
+    ]
+  ]  
+  
+end
+
+to crt-patchsets
+  
+  ;Setting some conviences names
+  set colonies patches with [ colony-id > 0 ] ;the baseline initialisation for cells is 0 (i.e. sea cells are 0)
+  set the-islands patches with [ habitable? ] ;convenience name
+  set island-id sort remove-duplicates [ colony-id ] of the-islands ;;creating a list of island-id's
+  set the-sea patches with [ not habitable? ]
+  set pred-islands patches with [ predators? ]
+  set safe-islands patches with [ habitable? = true and not predators? ]
+  
+end
+
+ to init-habitat
+  
+  ;Creating habitat heterogeneity and storing the colony patch-sets in a list (colonies)
+  set colonies []
+  foreach island-id [n -> 
+    dig-burrows n
+    set colonies lput (patches with [colony-id = n]) colonies
+  ] 
+  
+  ;Now diffuse surface
+  diffuse occupancy-limit diffusion-prop
+  
+  ask patches
+  [
+    set occupancy-limit floor occupancy-limit
+  ]
+  
+  ;Removing occupancy limits that shouldn't exist
+  ask the-sea 
+  [
+    set occupancy-limit 0
+  ]
+
+  
+  ask patches with [ habitable? ]
+  [
+    ifelse nhb-rad <= 1 [set neighbourhood (neighbors with [ habitable? ])][set neighbourhood patches with [ habitable? ] in-radius nhb-rad] ; set neighbourhoods for only island patches
+  ]
+  
+  ;;for the colour scale...
+  let min-occ-lim min [ occupancy-limit ] of the-islands
+  let max-occ-lim max [ occupancy-limit ] of the-islands
+  
+  ask the-islands
+  [  
+    ;;making it prettier
+    set pcolor scale-color green occupancy-limit max-occ-lim min-occ-lim
+    
+    ;;initialising habitat attractiveness
+    set maxK max [ occupancy-limit ] of neighbourhood
+    ask the-islands with [ maxK != 0 ] ;defensive in case there are any patches surrounded by 0
+    [
+      set habitat-attrac ( occupancy-limit / maxK ) * 0.3
+    ]
+  ]
+  
+end
+
+to dig-burrows [ n ]
+  
+  let island-patches patches with [ colony-id = n ] ;looking at only this island
+  let island-size count island-patches ;counting island size for determining suitability
+  
+  let example one-of island-patches
+  let prop-suit prop-suitable
+  let habitat-agg habitat-aggregation
+  let high-l  [high-lambda] of example
+  let low-l  [low-lambda] of example
+  
+  ;; seeds the grid with one patch as suitable
+  ask one-of island-patches [ set suitable? true]
+  let filled 1
+  
+  ;; this sequentially fills the grid by selecting patches and making them suitable
+  while [filled <= (prop-suit * island-size)]
+  [
+    ;; if rnd test is less than attract-suitable then an *unsuitable* patch next to a suitable patch is made suitable
+    ifelse random-float 1 <= habitat-agg
+    [
+      ask one-of [ neighbors with [ habitable? ] ] of (island-patches with [suitable?])
+      [
+        if suitable? = false
+        [
+          set suitable? true
+          set filled filled + 1
+        ]
+      ]
+    ]
+    
+    ;; otherwise pick a patch at random (this could any neighbouring a suitable patch)
+    ;; if you want to make sure it does not you'd need to use
+    ;; ask one-of patches with [(not suitable?) and (count neighbors with [suitable?] = 0)]
+    [
+      ask one-of island-patches with [habitable? and not suitable?]
+      ;;ask one-of patches with [(not suitable?) and (count neighbors with [suitable?] = 0)]
+      [
+        set suitable? true
+        set filled filled + 1
+      ]
+    ]
+ ]
+  
+  ;Now set two different poisson distributions
+  ask island-patches 
+  [
+    ifelse suitable? 
+    [
+      set occupancy-limit random-poisson high-l 
+    ]
+    [
+      set occupancy-limit random-poisson low-l
+    ]
+  ]
+  
+  
+  set island-attractiveness [] ; initialising
+  
+  let num-opts (n-values (length island-id) [ i -> i])
+  set num-opts map [ i -> i + 1 ] num-opts 
+  
+  foreach  island-id [ i ->   
+    let isl-att 1 / max island-id
+    set island-attractiveness lput isl-att island-attractiveness
+  ]
+  
+  ;;...adding a value for emigrating out of the system
+  set island-attractiveness lput emig-out-prob island-attractiveness
+    
+  ;;Normalising the values
+  ;;Calculating the total to divide by
+  let total-att sum(island-attractiveness)
+  
+  ;;Normalising to be between 0 and 100
+  set island-attractiveness map [ ta -> round((ta / total-att) * 100) ] island-attractiveness
+  
+  
+end
+
+to init-adults
+
+  foreach island-id [ n ->
+    
+    let example one-of patches with [ colony-id = n ]
+    let isl-n-females [ starting-seabird-pop ] of example 
+    
+    ;initialising females
+    create-females isl-n-females
+  
+    ;initialising basic parameters of birds
+    ask females with [ settled? = 0]
+    [
+      set shape "bird side"
+      setxy 0 0 ;making them all start on the left edge of the ma
+      set age age-at-first-breeding + random-poisson 2 ;adding some age variability
+      set size 1
+      set life-stage "Adult"
+      set time-since-breed 0
+      set emigration-attempts 0
+      
+      set natal-ground-id n
+      set breeding-ground-id n
+      set breeding-grounds patch-set patches with [ colony-id = n ]
+      set burrow no-patches
+      
+      set settled? true ;Has not been assigned a colony
+      set breeding? false ;Has not found a patch
+      set mating? false ;Has not found a mate
+    ]
+    
+  ]
+  
+  ;;Colouring and adding to agentset
+    ask females
+    [
+      set color orange
+    ]
+    
+  set breeders females with [ life-stage = "Adult"]
+    
+end
+
+
+to assign-burrows
+  
+  ask breeders with [ life-stage = "Adult" and breeding-grounds != no-patches ]
+  [
+    set burrow one-of breeding-grounds with [ occupancy < occupancy-limit ]
+    if debug? [ show burrow ] 
+  ]
+  
+end
+
+to init-juveniles
+  
+  foreach island-id [ n ->
+    
+    let example one-of patches with [ colony-id = n ]
+    let juvenile-pop [ starting-juveniles ] of example
+    
+    create-females juvenile-pop
+    [
+      raise-chick orange
+    ]
+    
+    ;;Adding to the recruits agentset
+    set recruits turtles with [ life-stage = "Juvenile"]
+    
+    ;;Assigning them to their natal island
+    ask recruits with [ not settled? ] 
+    [
+      set breeding-ground-id n
+      set breeding-grounds patch-set patches with [ colony-id = n ]
+      set settled? TRUE
+    ]
+  ]
+  
+end
+
+
+to raise-chick [ colour ]
+  
+  set color colour
+  
+  set size 1
+  set shape "bird side"
+  set age random age-at-first-breeding
+  set settled? false
+  set breeding? false
+  set mating? false
+  set last-breeding-success? false
+  set life-stage "Juvenile"
+  set natal-ground-id colony-id
+  set breeding-ground-id 0
+  set breeding-grounds no-patches
+  set burrow no-patches
+  set time-since-breed 0
+  set emigration-attempts 0
+  
+end
+
+to init-enso
+  
+  ;;Defensive check to make sure that the user has correctly defined the ENSO strings
+  carefully [ let check1 read-from-string enso-breed-impact ] [ print (word error-message " please ensure that you have five numeric values between 0 - 1, separated by spaces and wrapped in [] (e.g. [ 0.5 0.2 0.1 0.2 0.5 ])") ]
+  carefully [ let check2 read-from-string enso-adult-mort ] [ print (word error-message " please ensure that you have five numeric values between 0 - 1, separated by spaces and wrapped in [] (e.g. [ 0.5 0.2 0.1 0.2 0.5 ])") ]
+  
+  ;;Starting state is neutral (index starting at 0)
+  set enso-state 2
+ 
+  ;;Reading in the transition matrix for probabilities of state transitions
+  set enso-table csv:from-file "./data/enso/transition_matrix.csv"
+ 
+  ;;Removing the column names from the list for easy and to ensure that indexes line up
+  set enso-matrix remove-item 0 enso-table
+  
+end
+
+to init-by-isl-plots ;;Setting up plots
+  
+  isl-adult-n 
+  ;;Adult colony plots
+  init-isl-adult-plot
+  ;;Number of birds trying to breed
+  init-isl-breed-plot
+  ;;Number of birds fledged
+  init-isl-fledge-plot
+  ;;Number of birds mating by colony
+  init-isl-mating-plot
+  ;;Counting the number of burrows on each island
+  init-isl-burrow-plot  
+
+end
+
+
+

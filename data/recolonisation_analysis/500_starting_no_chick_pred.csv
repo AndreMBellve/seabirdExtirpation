@@ -1,0 +1,3 @@
+predators?,prop-suitable,low-lambda,high-lambda,habitat-aggregation,time-to-prospect,collapse-half-way,collapse-perc,starting-juveniles,starting-seabird-pop
+FALSE,0.3,1,100,0.2,2,50,0.3,500,0
+FALSE,0.3,1,100,0.2,2,50,0.3,1000,5000
