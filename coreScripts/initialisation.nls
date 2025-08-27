@@ -388,7 +388,7 @@ to init-adults
       set breeding-grounds patch-set patches with [ colony-id = n ]
       set burrow no-patches
       
-      set settled? true ;Has not been assigned a colony
+      set settled? true ;Has been assigned a colony
       set breeding? false ;Has not found a patch
       set mating? false ;Has not found a mate
     ]
@@ -436,7 +436,7 @@ to init-juveniles
     [
       set breeding-ground-id n
       set breeding-grounds patch-set patches with [ colony-id = n ]
-      set settled? TRUE
+      set settled? true
     ]
   ]
   

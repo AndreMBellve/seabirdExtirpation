@@ -58,17 +58,22 @@ end
 
 
 to philopatry-check
+  
   ;;emptying lists for census
   set new-adult-isl-counts []
   set philo-suc-counts []
   set philo-fail-counts []
   
   let female-recruits females with [ not settled? and life-stage = "Adult" and age = age-at-first-breeding ]
+  
   ;;Extra output
   if verbose? [ print (word "New female recruits: " count(female-recruits)) ]
-  ;;Philopatry check
+  
+  ;;Defensive check to ensure that there are some new recruits to carry out a philopatry check
+  if count female-recruits > 0 [
+      ;;Philopatry check
   choose-colony female-recruits female-philopatry
-
+  ]
 
 end
 
@@ -349,101 +354,102 @@ to burrowing ;;a task solely for males
   let potential-breeders females with [ settled? and not breeding? and life-stage = "Adult" ]
   
   ;;Resetting the return turtles-own parameter back to default.
-  ask potential-breeders [
-    set return? false
-  ]
-  
-  ;;potential-breeders returning
-  set returning-breeders n-of (random-binomial count(potential-breeders) prop-returning-breeders) potential-breeders ;actual returning individuals
-  
-  ;;Updating their return value
-  ask returning-breeders [
-    set return? true
-  ]
-   
-  ;;updating the breeders who are choosing not to breed this round to have their time since breeding reset
-  ask potential-breeders with [ not return? ]
-  [
-    ;;Subtracting 1 so that it undoes the addition of one time step at the end. This holds them in place
-    set time-since-breed  time-since-breed  - 1
-  ]
-
-  ;;calculating the number of males to distribute across patches
-  let num-breeders count(returning-breeders) 
-                                             
-  ;;Emptying census list
-  set male-counts []
-  
-  foreach island-id [ n ->
-    
-    ;;Calculating number of males to spread around
-    let num-female-breeders count returning-breeders with [ breeding-ground-id = n ]
-    let num-males-to-allocate (num-female-breeders * sex-ratio) ;working out the proportion of males to females
-   
-    ;;Updating census lists
-    set male-counts lput num-males-to-allocate male-counts
-    
-    ;; pulling the current colony patch-set
-    let curr-island item (n - 1) colonies
- 
-    ;; make a list of patches sorted on attractiveness
-    let sorted-att sort-on [ habitat-attrac ] curr-island
-    
-    ;;Values for the multinomial draw
-    let att-only [] ; list to contain habitat attract values
-    foreach sorted-att [ sa ->
+  if (count potential-breeders) > 0 [
+      ask potential-breeders [
+        set return? false
+      ]
       
-      ;;Rounded attractiveness from that sorted list
-      set att-only lput round([habitat-attrac] of sa * 100) att-only
-    ]
-    
-    ;;Multinomial draw creating a list of the number of males to be allocated to each patch (rescaling because these values do not sum to 100)
-    let males-to-allocate multinomial-int num-males-to-allocate att-only true    
-    
-    ;;idx counter to pass along excess male counts
-    let excess-idx 0 
-    
-    ;; allocate to the patches using another foreach to iterate over sorted list of patches
-    (foreach sorted-att males-to-allocate [ [a m] ->
-      ask a [
+      ;;potential-breeders returning
+      set returning-breeders n-of (random-binomial count(potential-breeders) prop-returning-breeders) potential-breeders ;actual returning individuals
+      
+      ;;Updating their return value
+      ask returning-breeders [
+        set return? true
+      ]
+      
+      ;;updating the breeders who are choosing not to breed this round to have their time since breeding reset
+      ask potential-breeders with [ not return? ]
+      [
+        ;;Subtracting 1 so that it undoes the addition of one time step at the end. This holds them in place
+        set time-since-breed  time-since-breed  - 1
+      ]
+      
+      ;;calculating the number of males to distribute across patches
+      let num-breeders count(returning-breeders) 
+      
+      ;;Emptying census list
+      set male-counts []
+      
+      foreach island-id [ n ->
         
-        ;;Calculating excess males of the patch to pass these along to the next most attractive patch
-        let excess max (list (m - occupancy-limit) 0)
+        ;;Calculating number of males to spread around
+        let num-female-breeders count returning-breeders with [ breeding-ground-id = n ]
+        let num-males-to-allocate (num-female-breeders * sex-ratio) ;working out the proportion of males to females
         
-        ;;Setting the number of males to be <= occupancy limit
-        set m min (list occupancy-limit m)
+        ;;Updating census lists
+        set male-counts lput num-males-to-allocate male-counts
         
-        ;;Updating the count of males
-        set male-count m
+        ;; pulling the current colony patch-set
+        let curr-island item (n - 1) colonies
         
-        ;;Checking if there is a patch the excess (or if there is an excess can be passed along too
-        if excess-idx < (length males-to-allocate - 1) and excess > 0 
-        [
-          ;;Replacing the next patch in the list with the current patches excess males
-          set males-to-allocate replace-item (excess-idx + 1) males-to-allocate (item (excess-idx + 1) males-to-allocate + excess)
+        ;; make a list of patches sorted on attractiveness
+        let sorted-att sort-on [ habitat-attrac ] curr-island
+        
+        ;;Values for the multinomial draw
+        let att-only [] ; list to contain habitat attract values
+        foreach sorted-att [ sa ->
+          
+          ;;Rounded attractiveness from that sorted list
+          set att-only lput round([habitat-attrac] of sa * 100) att-only
         ]
         
-        ;;Update the index tracker
-        set excess-idx excess-idx + 1
+        ;;Multinomial draw creating a list of the number of males to be allocated to each patch (rescaling because these values do not sum to 100)
+        let males-to-allocate multinomial-int num-males-to-allocate att-only true    
+        
+        ;;idx counter to pass along excess male counts
+        let excess-idx 0 
+        
+        ;; allocate to the patches using another foreach to iterate over sorted list of patches
+        (foreach sorted-att males-to-allocate [ [a m] ->
+          ask a [
+            
+            ;;Calculating excess males of the patch to pass these along to the next most attractive patch
+            let excess max (list (m - occupancy-limit) 0)
+            
+            ;;Setting the number of males to be <= occupancy limit
+            set m min (list occupancy-limit m)
+            
+            ;;Updating the count of males
+            set male-count m
+            
+            ;;Checking if there is a patch the excess (or if there is an excess can be passed along too
+            if excess-idx < (length males-to-allocate - 1) and excess > 0 
+            [
+              ;;Replacing the next patch in the list with the current patches excess males
+              set males-to-allocate replace-item (excess-idx + 1) males-to-allocate (item (excess-idx + 1) males-to-allocate + excess)
+            ]
+            
+            ;;Update the index tracker
+            set excess-idx excess-idx + 1
+          ] 
+        ])
+      ]   
+      
+      ;;creating a list of patches with males for efficiency when females arrive
+      set prospective-males []
+      
+      foreach island-id [i -> 
+        let target-colony item (i - 1) colonies
+        set prospective-males lput (target-colony with [ male-count > 0 ]) prospective-males
       ] 
-    ])
-  ]   
-    
-  ;;creating a list of patches with males for efficiency when females arrive
-  set prospective-males []
- 
-  foreach island-id [i -> 
-    let target-colony item (i - 1) colonies
-    set prospective-males lput (target-colony with [ male-count > 0 ]) prospective-males
-  ] 
+  ]
   
 end
 
 ;; FEMALES FINDING A MATE
 to find-mate ;a task solely for females
   
-  
-  ;Old pairings
+  ;;Old pairings
   
   if debug? [print (word "Mated females: " count( breeders with [ burrow != no-patches ]))]
   
@@ -456,7 +462,7 @@ to find-mate ;a task solely for females
   ] 
   
   
-  ;  ;New pairs
+  ;;New pairs
   if debug? [print (word "Unmated females " count( breeders with [ burrow = no-patches ]))]
   
   set new-pairs 0 ;counter for new mates
@@ -597,16 +603,8 @@ to hatching-fledging ;need to ask one in each pair to hatch....
     ;;Selecting birds and counting them
     let isl-breeding-birds breeders with [ colony-id = i and mating? ]
     
-    ;;This will lead to birds hanging around longer (kind of like they are set in their ways...) and will continue trying in the face of adverse conditions
-    ;ask isl-breeding-birds
-    ;[
-    ;  set time-since-breed 0
-    ;]
-    ;; The above code leads to all islands surviving regardless of predation... This is currently very broken.
-    
     ;;Count for the binomial draw 
     let n-attempted count isl-breeding-birds
-    
      
     ;;Creating turtles post fledging
     let total-mortality chick-pred + chick-mortality
@@ -747,11 +745,15 @@ to season-reset
   
   ;;Updating the attractiveness of islands for the philopatry test
   assess-islands 
- 
+  
+  
+   
   ;updating counter as these birds may move on in future seasons
-  ask breeders
-  [
-    set time-since-breed time-since-breed + 1 ;;birds which have just bred will have a value of 1
+  if count (breeders) > 0 [
+    ask breeders
+    [
+      set time-since-breed time-since-breed + 1 ;;birds which have just bred will have a value of 1
+    ]
   ]
   
   ;;loss of unoccupied burrows - comes before prospecting so the newly created burrows are not lost
@@ -775,7 +777,12 @@ to season-reset
   ;;Updating habitat attractiveness values
   if attrition? or prospect? or collapse?
   [
-    update-attract
+    ;;Defensive check to ensure that there are some birds in the system still
+    if count (turtles) > 0 [
+      
+      update-attract
+    
+    ]
   ]
   
   ;;Changing the current state of ENSO if active
@@ -802,12 +809,14 @@ to season-reset
     ]
   ]
   
-  ;;Resetting turtle location
-  ask turtles
-  [
-    setxy 0 0
-    set breeding? false
-    set mating? false
+  if count (turtles) > 0 [
+    ;;Resetting turtle location
+    ask turtles
+    [
+      setxy 0 0
+      set breeding? false
+      set mating? false
+    ]
   ]
   
   ;;Emptying the island

@@ -753,7 +753,7 @@ INPUTBOX
 675
 500
 initialisation-data
-./data/recolonisation_analysis/0_starting_no_chick_pred.csv
+./data/recolonisation_analysis/500_starting_chick_pred.csv
 1
 0
 String
@@ -960,7 +960,7 @@ INPUTBOX
 1010
 695
 behav-output-path
-./output/recolonisation_analysis/no_pred/
+./output/recolonisation_analysis/pred/
 1
 0
 String
@@ -1333,7 +1333,7 @@ clust-radius
 clust-radius
 2
 20
-15.0
+10.0
 1
 1
 NIL
